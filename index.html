@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <!-- ▼▼ 改这里：网页描述（搜索引擎/分享卡片会用到） ▼▼ -->
   <meta name="description"
-        content="Agile But Safe (ABS) 复现项目页：在 Unitree Go2 上复现高速无碰撞四足运动。">
-  <meta name="keywords" content="ABS, Agile But Safe, Go2, legged locomotion, reproduction">
+        content="Agile But Safe (ABS) 复现：在 Unitree Go2 + RealSense D435i + Livox MID360 上复现高速无碰撞四足运动，重点做 sim2real gap 测量与对齐。">
+  <meta name="keywords" content="ABS, Agile But Safe, Go2, sim2real, legged locomotion, reproduction">
   <!-- ▲▲ 改到这里 ▲▲ -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- ▼▼ 改这里：浏览器标签页标题 ▼▼ -->
-  <title>ABS 复现 | Agile But Safe Reproduction</title>
+  <title>ABS 复现 | Agile But Safe on Go2 (D435i + Livox)</title>
   <!-- ▲▲ 改到这里 ▲▲ -->
 
   <!-- 注意：原模板这里有 Google Analytics 跟踪代码，复现页不需要，已删除 -->
@@ -37,7 +37,6 @@
 <body>
 
 <!-- ===================== 顶部导航栏 ===================== -->
-<!-- 原模板这里有个 "More Research" 下拉菜单，复现页用不上，已简化为一个主页图标 -->
 <nav class="navbar" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
@@ -58,7 +57,7 @@
 </nav>
 
 
-<!-- ===================== 标题区（标题 / 作者 / 按钮） ===================== -->
+<!-- ===================== 标题区 ===================== -->
 <section class="hero">
   <div class="hero-body">
     <div class="container is-max-desktop">
@@ -67,12 +66,11 @@
 
           <!-- ▼▼ 改这里：页面大标题 ▼▼ -->
           <h1 class="title is-1 publication-title">
-            复现：Agile But Safe<br>
-            <span class="is-size-3">Collision-Free High-Speed Legged Locomotion on Go2</span>
+            复现 Agile But Safe<br>
+            <span class="is-size-3">Go2 + D435i + Livox 平台上的 Sim2Real 复现</span>
           </h1>
           <!-- ▲▲ 改到这里 ▲▲ -->
 
-          <!-- 这一行明确标注这是复现，不是原创工作（学术规范，别删） -->
           <div class="is-size-5 publication-authors" style="margin-top:0.5rem;">
             <span class="publication-venue">Reproduction Report · 复现报告</span>
           </div>
@@ -87,13 +85,12 @@
           <!-- ▲▲ 改到这里 ▲▲ -->
 
           <div class="is-size-6 publication-authors" style="color:#888;margin-top:0.3rem;">
-            原工作：He, Zhang, Xiao et al., <i>Agile But Safe</i>, RSS 2024
+            原工作：T. He, C. Zhang, W. Xiao et al.,
+            <i>Agile But Safe: Learning Collision-Free High-Speed Legged Locomotion</i>, RSS 2024
           </div>
 
-          <!-- 按钮区：复现页必须链接回原项目（学术规范 + 模板协议要求） -->
           <div class="column has-text-centered">
             <div class="publication-links">
-              <!-- 原论文 -->
               <span class="link-block">
                 <a href="https://arxiv.org/abs/2401.17583"
                    class="external-link button is-normal is-rounded is-dark">
@@ -101,7 +98,6 @@
                   <span>原论文 arXiv</span>
                 </a>
               </span>
-              <!-- 原项目主页 -->
               <span class="link-block">
                 <a href="https://agile-but-safe.github.io/"
                    class="external-link button is-normal is-rounded is-dark">
@@ -109,7 +105,6 @@
                   <span>原项目主页</span>
                 </a>
               </span>
-              <!-- 原代码 -->
               <span class="link-block">
                 <a href="https://github.com/LeCAR-Lab/ABS"
                    class="external-link button is-normal is-rounded is-dark">
@@ -136,8 +131,7 @@
 </section>
 
 
-<!-- ===================== 顶部大图 / 预告 ===================== -->
-<!-- 现在用封面图占位。等你有总览视频时，把下面 <img> 整块换成注释里的 <video> 写法 -->
+<!-- ===================== 顶部大图 ===================== -->
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
@@ -151,7 +145,8 @@
       -->
       <!-- ▼▼ 改这里：大图下面的一句话说明 ▼▼ -->
       <h2 class="subtitle has-text-centered" style="margin-top:1rem;">
-        在 Unitree Go2 + RealSense D435 上复现 ABS 的高速无碰撞运动策略。
+        将 ABS 适配到 Unitree Go2 + RealSense D435i + Livox MID360，
+        并通过 real2sim 测量缩小 sim2real 差距。
       </h2>
       <!-- ▲▲ 改到这里 ▲▲ -->
     </div>
@@ -159,33 +154,26 @@
 </section>
 
 
-<!-- ===================== 复现结果（视频轮播） ===================== -->
+<!-- ===================== 复现结果 ===================== -->
 <section class="hero is-light is-small">
   <div class="hero-body">
     <div class="container">
-      <h2 class="title is-3 has-text-centered" style="margin-bottom:1.5rem;">复现结果 Results</h2>
+      <h2 class="title is-3 has-text-centered" style="margin-bottom:0.5rem;">复现结果 Results</h2>
+      <p class="has-text-centered" style="color:#888;margin-bottom:1.5rem;">
+        实机/仿真视频待补 — 拍好后放入 <code>static/videos/</code> 并按下方注释模板添加。
+      </p>
 
       <!--
-        说明：这是一个会自动轮播的画廊。每个 <div class="item"> 是一张幻灯。
-        你拍好复现视频后：把 mp4 放进 static/videos/，然后复制下面"视频卡片模板"
-        这一整块、改 src 文件名即可，想放几个就复制几次。
-        现在先用 ABS 的图占位，保证页面不空。
-      -->
-      <div id="results-carousel" class="carousel results-carousel">
-
-        <!-- ====== 视频卡片模板（复制这一整块，改 src 即可） ====== -->
-        <!--
+        视频卡片模板（拍好视频后，复制下面这一整块、改 src 文件名，想放几个复制几次）：
         <div class="item">
           <video controls muted loop playsinline height="100%">
             <source src="./static/videos/result1.mp4" type="video/mp4">
           </video>
         </div>
-        -->
-        <!-- ====== 模板结束 ====== -->
-
-        <!-- 下面 3 张是占位图，等你有视频了可以删掉 -->
+      -->
+      <div id="results-carousel" class="carousel results-carousel">
         <div class="item">
-          <img src="./static/images/cover.png" alt="result placeholder 1">
+          <img src="./static/images/cover.png" alt="overview">
         </div>
         <div class="item">
           <img src="./static/images/systemoverview.png" alt="system overview">
@@ -193,7 +181,6 @@
         <div class="item">
           <img src="./static/images/hardware.png" alt="hardware setup">
         </div>
-
       </div>
     </div>
   </div>
@@ -203,29 +190,32 @@
 <!-- ===================== 复现说明 ===================== -->
 <section class="section">
   <div class="container is-max-desktop">
-
     <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
         <h2 class="title is-3">复现说明 Overview</h2>
         <div class="content has-text-justified">
-          <!-- ▼▼ 改这里：用自己的话写"原工作是什么 + 你复现了哪部分" ▼▼ -->
           <p>
-            <b>原工作：</b>Agile But Safe (ABS) 提出了一套让四足机器人在杂乱环境中
-            高速移动同时避免碰撞的学习方法，核心是一个敏捷策略与一个恢复策略的协同，
-            以及基于可达性的安全机制。
+            <b>原工作。</b> Agile But Safe (ABS, RSS 2024) 让四足机器人在杂乱环境中
+            <b>高速移动的同时避免碰撞</b>：用一个<i>敏捷策略 (agile policy)</i> 追求速度，
+            一个<i>恢复策略 (recovery policy)</i> 在危险时接管，两者由一个基于
+            <i>可达性 (reach-avoid) 值函数</i>的安全门限协同切换，并配合一个
+            从感知预测碰撞风险的网络。
           </p>
           <p>
-            <b>本复现范围：</b>本项目在
-            <i>Isaac Gym</i> 中完成策略训练，并将策略部署到
-            <i>Unitree Go2 + RealSense D435</i> 实机上验证。下图为系统总览：
+            <b>本复现的定位。</b> 本项目不是简单跑通官方代码，而是把 ABS
+            <b>迁移到本实验室的硬件平台</b> —— <b>Unitree Go2 + RealSense D435i
+            （前向深度→2D ray）+ Livox MID360（侧/后向 2D lidar 与 LIO 定位）</b> ——
+            并把工作重心放在 <b>sim2real gap 的量化与对齐</b>：先在实机上测量延迟、
+            负载、电机特性，再把这些测量值回灌进仿真 (real2sim) 做域随机化，
+            让训练出的策略在真机上可用。训练在 <i>Isaac Gym</i> 完成，
+            部署为一套 <i>ROS</i> 节点。
           </p>
-          <!-- ▲▲ 改到这里 ▲▲ -->
         </div>
         <img src="./static/images/systemoverview.png" alt="system overview"
              style="border-radius:8px;width:100%;">
+        <p style="color:#888;font-size:0.9rem;margin-top:0.5rem;">系统总览</p>
       </div>
     </div>
-
   </div>
 </section>
 
@@ -236,45 +226,95 @@
     <div class="columns is-centered">
       <div class="column is-full-width">
         <h2 class="title is-3">复现改动与踩坑 Changes &amp; Pitfalls</h2>
+        <div class="content has-text-justified">
+          <p>
+            以下每条都对应代码里的真实改动；带 <span style="color:#ff3860;">（待补）</span>
+            的是需要你用实测数据/视频补全的部分。
+          </p>
+        </div>
 
-        <!-- ▼▼ 改这里：这一节全部按你的实际情况填，下面是骨架 ▼▼ -->
-
-        <h3 class="title is-4">1. 训练侧改动</h3>
+        <h3 class="title is-4">1. 硬件与感知管线适配</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>（填）改了哪些 config / 环境，为什么。</li>
-            <li>（填）训练超参、课程、奖励的调整。</li>
+            <li>把部署管线从原方案适配到 <b>Go2 + D435i + Livox MID360</b>：
+              新增 <code>d435_preprocess_node</code> / <code>publisher_depthimg_linvel_d435</code>
+              做前向深度→linvel/ray，<code>livox_side_lidar_node</code> /
+              <code>print_zed_front_lidar</code> 处理侧后向 lidar。</li>
+            <li>重写定位与避障节点（<code>go2_pos_RA_rec_odom</code> +706 行、
+              <code>depth_obstacle_depth_goal_ros</code> +667 行）以对接 Go2 的
+              里程计/控制接口与新的传感器话题。</li>
+            <li>新增 lidar 增强配置 <code>go2_pos_lidar_config</code> 与评测脚本
+              <code>play_lidar_eval</code>：观测维度 50 → <b>74</b>
+              （base 50 + 前向 ray2d 11 + 侧/后 lidar2d 13）。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">2. 部署侧改动</h3>
+        <h3 class="title is-4">2. real2sim：URDF 负载修正</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>（填）Go2 / D435 上 ROS 节点、话题、坐标系的适配。</li>
-            <li>（填）控制频率、关节限位、安全保护的处理。</li>
+            <li>原 URDF 用的是裸 Go2 惯量（6.921 kg）。本复现把
+              <b>D435i (0.072 kg @ [0.31,0,0.10])</b> 与
+              <b>Livox MID360 (0.265 kg @ [0.15,0,0.13])</b> 作为点质量，
+              用<b>平行轴定理</b>合并进 base 惯量 →
+              质量 6.921 → <b>7.258 kg</b>，质心/惯量同步修正。</li>
+            <li>动机：传感器是悬臂安装，不修正会让仿真低估俯仰惯量，
+              策略在真机上点头/过冲。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">3. 踩过的坑</h3>
+        <h3 class="title is-4">3. real2sim：把实测差距灌进域随机化</h3>
         <div class="content has-text-justified">
+          <p>用 <code>tools/measure_sim2real_gap.py</code> 与
+            <code>measure_joint_limits_readonly.py</code> 在实机上量测，
+            再把数值写进训练 config：</p>
           <ul>
-            <li>（填）遇到的具体问题 + 怎么定位 + 最终怎么解决。</li>
+            <li><b>关节响应</b>：<code>armature = 0.01</code>（齿轮电机反射惯量，原为 0）。</li>
+            <li><b>动作延迟</b>：<code>action_latency_range = [0,1]</code> 步
+              （实测 sense→actuate ≈ 9 ms）。</li>
+            <li><b>定位延迟/抖动</b>：<code>loc_latency_range = [1,3]</code> 步、
+              <code>loc_update_decimation = 2</code>（LIO ≈ 25 Hz）、
+              yaw 随机游走 <code>loc_yaw_drift_std = 0.005</code> rad/step、
+              偏置上限 0.10 rad。</li>
+            <li><b>力矩-转速衰减</b>：<code>torque_speed_derate</code> 开启，
+              用 URDF 峰值力矩/最大转速构造线性包络（floor 10%），
+              防止策略学到真机做不出的急摆。</li>
+            <li><b>前向感知延迟</b>：<code>front_lidar_latency_range = [1,3]</code> 步、
+              decimation 2（D435i→ray ≈ 23 ms，慢于控制环）。</li>
+            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → 0.5 重新开启以增鲁棒。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">4. 复现结论</h3>
+        <h3 class="title is-4">4. 任务与观测调整</h3>
         <div class="content has-text-justified">
-          <p>（填）复现到什么程度，和原文指标对比，差距和可能原因。</p>
+          <ul>
+            <li>目标采样范围 0.3–3.0 m → <b>0.2–6.0 m</b>（覆盖更大场地）。</li>
+            <li>前向射线密度 <code>theta_step</code> 4.35°(21 条) → <b>8.7°(11 条)</b>，
+              与 D435i 实际可用视场/算力匹配。</li>
+            <li>对定位推出的目标向量与朝向加白噪声
+              （<code>commands = 0.03</code>），模拟 LIO 噪声。</li>
+          </ul>
         </div>
 
-        <!-- ▲▲ 改到这里 ▲▲ -->
+        <h3 class="title is-4">5. 踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）写 2–4 条你真正卡过的：现象 → 怎么定位 → 怎么解决。
+              例如：D435i 深度空洞导致 ray 跳变 / LIO 在快速转向时 yaw 漂移 /
+              力矩饱和导致点头 / 仿真步长与控制频率不一致 等。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">6. 复现结论 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <p>（待补）复现到什么程度：仿真成功率 / 实机成功率 / 最高速度，
+            与原文指标对比，差距及可能原因。<b>没有实测数据前别写数字。</b></p>
+        </div>
 
         <h3 class="title is-4">硬件平台</h3>
         <div class="content has-text-centered">
           <img src="./static/images/hardware.png" alt="hardware"
                style="border-radius:8px;width:75%;">
         </div>
-
       </div>
     </div>
   </div>
