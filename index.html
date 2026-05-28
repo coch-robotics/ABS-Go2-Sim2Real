@@ -220,100 +220,235 @@
 </section>
 
 
-<!-- ===================== 复现改动与踩坑 ===================== -->
+<!-- ===================== 仿真部分 ===================== -->
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">复现改动与踩坑 Changes &amp; Pitfalls</h2>
+        <h2 class="title is-3">仿真部分 Simulation</h2>
         <div class="content has-text-justified">
           <p>
-            以下每条都对应代码里的真实改动；带 <span style="color:#ff3860;">（待补）</span>
-            的是需要你用实测数据/视频补全的部分。
+            仿真侧基于 ABS 官方代码（<code>training/legged_gym</code> + <code>training/rsl_rl</code>，
+            Isaac Gym Preview 4），按原文要训四个组件：
+            <b>(1) 敏捷策略 agile policy</b>（<code>go1_pos_rough</code>，PPO，~4000 iters）、
+            <b>(2) 恢复策略 recovery policy</b>（<code>go1_rec_rough</code>，~1000 iters）、
+            <b>(3) Reach-Avoid 值函数</b>（<code>scripts/testbed.py --trainRA</code>）、
+            <b>(4) 射线预测网络 ray-prediction</b>（<code>camrec.py</code> 采集，
+            <code>train_depth_resnet.py</code> 训练）。
+            本复现把官方的 Go1 训练 pipeline 整体迁到 Go2，再做 real2sim 对齐。
           </p>
         </div>
 
-        <h3 class="title is-4">1. 硬件与感知管线适配</h3>
+        <h3 class="title is-4">1. 训练 pipeline 与产物</h3>
         <div class="content has-text-justified">
-          <ul>
-            <li>把部署管线从原方案适配到 <b>Go2 + D435i + Livox MID360</b>：
-              新增 <code>d435_preprocess_node</code> / <code>publisher_depthimg_linvel_d435</code>
-              做前向深度→linvel/ray，<code>livox_side_lidar_node</code> /
-              <code>print_zed_front_lidar</code> 处理侧后向 lidar。</li>
-            <li>重写定位与避障节点（<code>go2_pos_RA_rec_odom</code> +706 行、
-              <code>depth_obstacle_depth_goal_ros</code> +667 行）以对接 Go2 的
-              里程计/控制接口与新的传感器话题。</li>
-            <li>新增 lidar 增强配置 <code>go2_pos_lidar_config</code> 与评测脚本
-              <code>play_lidar_eval</code>：观测维度 50 → <b>74</b>
-              （base 50 + 前向 ray2d 11 + 侧/后 lidar2d 13）。</li>
-          </ul>
+          <p>下面给出仿真侧的标准命令；产物 <code>.pt</code> 之后会用
+            <code>deployment/src/abs_src/onnx_model_converter.py</code> 导出为
+            <code>.onnx</code> 给部署节点调用。</p>
+<pre><code># 1) 敏捷策略（Go2 对应任务）
+python scripts/train.py --task=go2_pos_rough --max_iterations=4000
+
+# 2) 恢复策略
+python scripts/train.py --task=go2_rec_rough --max_iterations=1000
+
+# 3) 先 play 一次导出 policy 文件夹，再训 Reach-Avoid
+python scripts/play.py     --task=go2_pos_rough
+python scripts/testbed.py  --task=go2_pos_rough --num_envs=1000 --headless --trainRA
+
+# 4) 采射线数据 + 训 ray-prediction
+python scripts/camrec.py            --task=go2_pos_rough --num_envs=3
+python scripts/train_depth_resnet.py
+</code></pre>
         </div>
 
         <h3 class="title is-4">2. real2sim：URDF 负载修正</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>原 URDF 用的是裸 Go2 惯量（6.921 kg）。本复现把
-              <b>D435i (0.072 kg @ [0.31,0,0.10])</b> 与
-              <b>Livox MID360 (0.265 kg @ [0.15,0,0.13])</b> 作为点质量，
-              用<b>平行轴定理</b>合并进 base 惯量 →
-              质量 6.921 → <b>7.258 kg</b>，质心/惯量同步修正。</li>
-            <li>动机：传感器是悬臂安装，不修正会让仿真低估俯仰惯量，
-              策略在真机上点头/过冲。</li>
+            <li>原 URDF 用的是裸 Go2 惯量（base 6.921 kg）。本复现把
+              <b>RealSense D435i (0.072 kg @ [0.31, 0, 0.10] m)</b> 与
+              <b>Livox MID360 (0.265 kg @ [0.15, 0, 0.13] m)</b> 当作刚性点质量，
+              用<b>平行轴定理</b>合并进 <code>base_link</code> 惯量：
+              质量 6.921 → <b>7.258 kg</b>，<code>com</code> 与
+              <code>inertia</code> 同步重算。</li>
+            <li><b>动机</b>：两个传感器都是悬臂前装，不修正仿真会显著低估俯仰惯量，
+              训出来的策略在真机上加减速时容易点头/过冲。</li>
           </ul>
         </div>
 
         <h3 class="title is-4">3. real2sim：把实测差距灌进域随机化</h3>
         <div class="content has-text-justified">
           <p>用 <code>tools/measure_sim2real_gap.py</code> 与
-            <code>measure_joint_limits_readonly.py</code> 在实机上量测，
-            再把数值写进训练 config：</p>
+            <code>measure_joint_limits_readonly.py</code> 在实机上量延迟、力矩-转速、
+            关节回零偏置等，再把数值写进 <code>go2_pos_config.py</code> 的
+            <code>class domain_rand</code>：</p>
           <ul>
-            <li><b>关节响应</b>：<code>armature = 0.01</code>（齿轮电机反射惯量，原为 0）。</li>
-            <li><b>动作延迟</b>：<code>action_latency_range = [0,1]</code> 步
-              （实测 sense→actuate ≈ 9 ms）。</li>
-            <li><b>定位延迟/抖动</b>：<code>loc_latency_range = [1,3]</code> 步、
-              <code>loc_update_decimation = 2</code>（LIO ≈ 25 Hz）、
-              yaw 随机游走 <code>loc_yaw_drift_std = 0.005</code> rad/step、
+            <li><b>关节响应</b>：<code>armature = 0.01</code>
+              （齿轮电机反射惯量，原值 0，会让仿真关节过分"轻快"）。</li>
+            <li><b>动作延迟</b>：<code>action_latency_range = [0, 1]</code> 步
+              （实测 sense → actuate ≈ 9 ms，控制环 50 Hz）。</li>
+            <li><b>定位延迟/抖动</b>：<code>loc_latency_range = [1, 3]</code> 步、
+              <code>loc_update_decimation = 2</code>（Livox LIO ≈ 25 Hz）、
+              yaw 随机游走 <code>loc_yaw_drift_std = 0.005 rad/step</code>，
               偏置上限 0.10 rad。</li>
-            <li><b>力矩-转速衰减</b>：<code>torque_speed_derate</code> 开启，
-              用 URDF 峰值力矩/最大转速构造线性包络（floor 10%），
+            <li><b>力矩-转速衰减</b>：<code>torque_speed_derate = True</code>，
+              用 URDF 峰值力矩 / 最大转速构造线性包络（floor 10%），
               防止策略学到真机做不出的急摆。</li>
-            <li><b>前向感知延迟</b>：<code>front_lidar_latency_range = [1,3]</code> 步、
-              decimation 2（D435i→ray ≈ 23 ms，慢于控制环）。</li>
-            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → 0.5 重新开启以增鲁棒。</li>
+            <li><b>前向感知延迟</b>：<code>front_lidar_latency_range = [1, 3]</code> 步、
+              decimation 2（D435i → ray ≈ 23 ms，慢于控制环）。</li>
+            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → <b>0.5</b>
+              重新开启随机推力，逼策略学鲁棒。</li>
           </ul>
         </div>
 
         <h3 class="title is-4">4. 任务与观测调整</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>目标采样范围 0.3–3.0 m → <b>0.2–6.0 m</b>（覆盖更大场地）。</li>
-            <li>前向射线密度 <code>theta_step</code> 4.35°(21 条) → <b>8.7°(11 条)</b>，
-              与 D435i 实际可用视场/算力匹配。</li>
-            <li>对定位推出的目标向量与朝向加白噪声
-              （<code>commands = 0.03</code>），模拟 LIO 噪声。</li>
+            <li><b>观测维度</b>：base 50 + 前向 ray2d 11 + 侧 / 后 lidar2d 13 =
+              <b>74</b>（原 ABS 为 50 + 21 = 71，无侧后向）。在
+              <code>go2_pos_lidar_config.py</code> 把 <code>num_observations</code>
+              改为 74，policy MLP 输入层同步加宽。</li>
+            <li><b>目标采样范围</b> 0.3–3.0 m → <b>0.2–6.0 m</b>，覆盖实验室更大场地。</li>
+            <li><b>前向射线密度</b> <code>sensors.ray2d.theta_step</code>
+              π/40 (4.5°, 21 条) → <b>π/20 (9°, 11 条)</b>，与 D435i 实际可用
+              FOV 和板载算力对齐。</li>
+            <li><b>定位噪声</b>：对 LIO 推出的目标向量与朝向加白噪声
+              （<code>noise_scales.commands = 0.03</code>），模拟 Livox-LIO 的抖动。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">5. 踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <h3 class="title is-4">5. 训练曲线与仿真评测 <span style="color:#ff3860;">（待补）</span></h3>
         <div class="content has-text-justified">
           <ul>
-            <li>（待补）写 2–4 条你真正卡过的：现象 → 怎么定位 → 怎么解决。
-              例如：D435i 深度空洞导致 ray 跳变 / LIO 在快速转向时 yaw 漂移 /
-              力矩饱和导致点头 / 仿真步长与控制频率不一致 等。</li>
+            <li>（待补）放 TensorBoard 截图：reward / episode_length /
+              collision_rate / success_rate。</li>
+            <li>（待补）在 <code>play_lidar_eval.py</code> 上跑 N=500 个随机场景，
+              报告：成功率、平均到达时间、最高 forward velocity、碰撞率。
+              与原文 Table I 列对比。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">6. 复现结论 <span style="color:#ff3860;">（待补）</span></h3>
+        <h3 class="title is-4">6. 仿真侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
         <div class="content has-text-justified">
-          <p>（待补）复现到什么程度：仿真成功率 / 实机成功率 / 最高速度，
-            与原文指标对比，差距及可能原因。<b>没有实测数据前别写数字。</b></p>
+          <ul>
+            <li>（待补）写 2–4 条仿真里真正卡过的：现象 → 定位 → 解决。
+              例如：<i>armature=0 时关节震荡 / RA value 不收敛要先 freeze agile policy /
+              env 数量过大时显存爆 / 仿真步长与控制 decimation 不一致导致延迟翻倍</i> 等。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 部署部分 ===================== -->
+<section class="section" style="background:#fafafa;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">部署部分 Deployment</h2>
+        <div class="content has-text-justified">
+          <p>
+            部署侧基于 ABS 的 ROS pipeline，但本体由 <b>Go1 → Go2</b>，前视相机由
+            <b>ZED mini → RealSense D435i</b>，并额外引入 <b>Livox MID360</b>
+            做侧/后向 2D lidar 与 LIO 定位。整套节点跑在板载 <b>Orin NX (16GB)</b>，
+            通过 Unitree Go2 低层控制接口下发关节命令。
+          </p>
         </div>
 
-        <h3 class="title is-4">硬件平台</h3>
+        <h3 class="title is-4">1. 硬件平台</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>Robot</b>: Unitree Go2 EDU（替换原 Go1）</li>
+            <li><b>前向感知</b>: Intel RealSense D435i（替换原 ZED mini）</li>
+            <li><b>侧 / 后向感知 + 定位</b>: Livox MID360（新增）</li>
+            <li><b>板载算力</b>: NVIDIA Jetson Orin NX 16GB</li>
+            <li><b>状态指示</b>: PSEQT LED Lights（沿用原方案）</li>
+            <li><b>电源</b>: Pololu 12V 15A Step-Down Regulator D24V150F12</li>
+          </ul>
+        </div>
         <div class="content has-text-centered">
           <img src="./static/images/hardware.png" alt="hardware"
                style="border-radius:8px;width:75%;">
+        </div>
+
+        <h3 class="title is-4">2. 感知管线适配</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>前向深度 → ray</b>：新增
+              <code>d435_preprocess_node</code> /
+              <code>publisher_depthimg_linvel_d435.py</code>，
+              从 D435i 深度图沿 11 条等角射线取最近障碍物距离，
+              并发布 <code>/odom_linvel</code> 给策略当 base lin-vel 估计。</li>
+            <li><b>侧 / 后向 2D lidar</b>：新增
+              <code>livox_side_lidar_node</code> /
+              <code>print_zed_front_lidar</code>，从 MID360 的 3D 点云按
+              base 高度切片得到 2D 距离，喂给 <code>go2_pos_lidar</code> 策略的
+              附加 13 维观测。</li>
+            <li><b>定位</b>：MID360 + LIO 提供 <code>/Odometry</code>，频率 ≈ 25 Hz；
+              下游节点对位姿再做插值与噪声裁剪。</li>
+            <li><b>模型转换</b>：训练得到的 <code>.pt</code>（agile / recovery / RA）
+              用 <code>onnx_model_converter.py</code> 转为 <code>.onnx</code>，
+              在 Orin NX 上以 ONNXRuntime 推理。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">3. ROS 节点与启动顺序</h3>
+        <div class="content has-text-justified">
+<pre><code># 1) ROS 与 Go2 低层模式
+roscore
+# 手柄: L2+A → L2+B → L1+L2+Start  进入低层控制
+
+# 2) 传感器预处理 + 定位
+python publisher_depthimg_linvel_d435.py            # D435i 深度 → ray + linvel
+rosrun livox_ros_driver2 livox_ros_driver2_node     # MID360 点云
+roslaunch fast_lio mapping.launch                   # LIO → /Odometry
+
+# 3) LED 安全指示（颜色由 RA value 决定）
+python led_control_ros.py
+
+# 4) 主控（agile + recovery 切换 + Go2 下发关节）
+python depth_obstacle_depth_goal_ros.py
+</code></pre>
+          <p>主控里同时挂着两份策略：<b>agile</b> 平时跑；当 RA 值跌破阈值，切
+            <b>recovery</b> 接管把机器人拽回安全集；LED 同步切红色提示操作者。</p>
+        </div>
+
+        <h3 class="title is-4">4. 手柄控制映射</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><code>B</code>：紧急停止</li>
+            <li><code>Default</code>：按目标命令运行 ABS</li>
+            <li><code>L2 / R2</code>：左转 / 右转</li>
+            <li><code>Down / Up</code>：后退 / 站立</li>
+            <li><code>A</code>：原地转身</li>
+            <li><code>X</code>：回到初始位置</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">5. 实机评测 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）N 次试跑的成功率 / 碰撞次数 / 最高 forward velocity。</li>
+            <li>（待补）2–3 段实机视频放进 <code>static/videos/</code>，
+              在上方 <i>Results</i> 走马灯里挂出来。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">6. 部署侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）建议每条写：现象 → 怎么定位 → 怎么解决。
+              例如：<i>D435i 深度空洞导致 ray 跳变（中值滤波 + 失败值用上一帧）/
+              LIO 在快速转向时 yaw 漂移（提高 IMU 权重 / 限制角速度）/
+              力矩饱和点头（开 torque_speed_derate 重训）/ Go2 SDK 与 Go1 在
+              关节顺序上的差异</i> 等。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">7. 复现结论 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <p>（待补）复现到什么程度：仿真成功率 / 实机成功率 / 最高速度，
+            与原文指标对比，差距及可能原因。<b>没有实测数据前别写数字。</b></p>
         </div>
       </div>
     </div>
