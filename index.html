@@ -221,7 +221,7 @@
 
 
 <!-- ===================== 仿真部分 ===================== -->
-<section class="section">
+<section class="section" id="sim">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
@@ -229,64 +229,150 @@
         <div class="content has-text-justified">
           <p>
             仿真侧基于 ABS 官方代码（<code>training/legged_gym</code> + <code>training/rsl_rl</code>，
-            Isaac Gym Preview 4），按原文要训四个组件：
-            <b>(1) 敏捷策略 agile policy</b>（<code>go1_pos_rough</code>，PPO，~4000 iters）、
-            <b>(2) 恢复策略 recovery policy</b>（<code>go1_rec_rough</code>，~1000 iters）、
-            <b>(3) Reach-Avoid 值函数</b>（<code>scripts/testbed.py --trainRA</code>）、
-            <b>(4) 射线预测网络 ray-prediction</b>（<code>camrec.py</code> 采集，
-            <code>train_depth_resnet.py</code> 训练）。
-            本复现把官方的 Go1 训练 pipeline 整体迁到 Go2，再做 real2sim 对齐。
+            Isaac Gym Preview 4）。按原文要训四个组件：
+            <b>(1) 敏捷策略 agile policy</b>（PPO）、
+            <b>(2) 恢复策略 recovery policy</b>、
+            <b>(3) Reach-Avoid 值函数</b>、
+            <b>(4) 射线预测网络 ray-prediction</b>。
+            本节按真实推进顺序写：<b>搭环境 → Go1→Go2 移植 → 首轮 sim2real（暴露 gap）
+            → real2sim 反推回仿真 → 观测/任务调整 → 评测/踩坑</b>。
           </p>
         </div>
 
-        <h3 class="title is-4">1. 训练 pipeline 与产物</h3>
+        <!-- ========== 0. 环境搭建 ========== -->
+        <h3 class="title is-4">0. 环境搭建</h3>
         <div class="content has-text-justified">
-          <p>下面给出仿真侧的标准命令；产物 <code>.pt</code> 之后会用
-            <code>deployment/src/abs_src/onnx_model_converter.py</code> 导出为
-            <code>.onnx</code> 给部署节点调用。</p>
-<pre><code># 1) 敏捷策略（Go2 对应任务）
-python scripts/train.py --task=go2_pos_rough --max_iterations=4000
+          <p>严格按官方 README 的版本组合来，少踩坑：</p>
+<pre><code># 1) Python 3.8 + PyTorch（CUDA 11.6）
+conda create -n abs python=3.8 -y
+conda activate abs
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 \
+    --extra-index-url https://download.pytorch.org/whl/cu116
 
-# 2) 恢复策略
-python scripts/train.py --task=go2_rec_rough --max_iterations=1000
+# 2) Isaac Gym Preview 4（需手动下载 tar 包）
+cd isaacgym/python && pip install -e .
+# 自检：
+cd examples && python 1080_balls_of_solitude.py
 
-# 3) 先 play 一次导出 policy 文件夹，再训 Reach-Avoid
-python scripts/play.py     --task=go2_pos_rough
-python scripts/testbed.py  --task=go2_pos_rough --num_envs=1000 --headless --trainRA
+# 3) ABS 仓库本地化
+cd ABS/training
+pip install -e rsl_rl          # ABS 改过的 rsl_rl，必须从 ABS 目录装
+pip install -e legged_gym
 
-# 4) 采射线数据 + 训 ray-prediction
-python scripts/camrec.py            --task=go2_pos_rough --num_envs=3
-python scripts/train_depth_resnet.py
+# 4) 老版本依赖钉死，否则会和 Isaac Gym 冲突
+pip install "numpy&gt;1.20,&lt;1.24"   # 实测 1.21 最稳
+pip install tensorboard
+pip install setuptools==59.5.0
 </code></pre>
+          <p style="color:#888;">常见坑：</p>
+          <ul>
+            <li><code>numpy ≥ 1.24</code> 会让 Isaac Gym 在解析数组类型时崩。</li>
+            <li><code>setuptools</code> 太新会让 <code>pip install -e</code> 失败。</li>
+            <li>驱动 / CUDA 版本与 PyTorch / Isaac Gym 任一不匹配，
+              <code>num_envs</code> 一大就 CUDA OOM 或 illegal memory access。
+              先用 <code>--num_envs=64</code> 调通再放大。</li>
+          </ul>
         </div>
 
-        <h3 class="title is-4">2. real2sim：URDF 负载修正</h3>
+        <!-- ========== 1. Go1 → Go2 移植 ========== -->
+        <h3 class="title is-4">1. 把训练目标从 Go1 切到 Go2</h3>
+        <div class="content has-text-justified">
+          <p>ABS 原仓库只给 Go1 的任务，所以要把整套训练流程平移到 Go2。
+            涉及的文件清单（路径相对 <code>training/legged_gym/legged_gym/</code>）：</p>
+          <ul>
+            <li><b>新增 URDF</b>：<code>resources/robots/go2/urdf/go2_description.urdf</code>
+              （取自 Unitree 官方 go2 描述包，含 mesh）。</li>
+            <li><b>新增 Go2 配置</b>：把 <code>envs/go1/</code> 下的三份配置整体复制成
+              <code>envs/go2/</code>：<code>go2_config.py</code> /
+              <code>go2_pos_config.py</code> / <code>go2_rec_config.py</code>，逐项改：
+              <ul>
+                <li><code>asset.file</code>：<code>go1.urdf</code> →
+                  <code>go2_description.urdf</code>；<code>asset.name = "go2"</code>。</li>
+                <li><code>init_state.pos</code>：Go1 站高 <code>0.37 m</code> →
+                  Go2 实测 <b><code>0.34 m</code></b>（Go2 腿稍短）。</li>
+                <li><code>init_state.default_joint_angles</code>：保留
+                  <code>FL/FR/RL/RR_{hip,thigh,calf}_joint</code> 命名（Go2 关节名一致），
+                  但 <code>thigh = 0.9</code>、<code>calf = -1.8</code>
+                  以匹配 Go2 的腿长比例（Go1 是 0.8 / -1.5）。</li>
+                <li><code>control.stiffness / damping</code>：Go1 用 30 / 0.65，
+                  Go2 电机更"硬"，初版按 Unitree SDK 默认改为
+                  <b>40 / 1.0</b> 再回归调。</li>
+                <li><code>asset.foot_name</code> 保持 <code>"foot"</code>，
+                  接触惩罚 link 名 <code>"thigh"/"calf"</code> 不变。</li>
+              </ul>
+            </li>
+            <li><b>新增 lidar 增强配置</b>：再复制一份
+              <code>go2_pos_lidar_config.py</code>，<code>num_observations</code>
+              从 50+21=71 改成 <b>50+11+13=74</b>，给侧/后 2D lidar 留位置。</li>
+            <li><b>注册任务</b>：编辑 <code>envs/__init__.py</code>，加：
+<pre><code>task_registry.register("go2_rough",            LeggedRobot,    Go2RoughCfg(),         Go2RoughCfgPPO())
+task_registry.register("go2_pos_rough",        LeggedRobotPos, Go2PosRoughCfg(),      Go2PosRoughCfgPPO())
+task_registry.register("go2_pos_lidar_rough",  LeggedRobotPos, Go2PosLidarRoughCfg(), Go2PosLidarRoughCfgPPO())
+task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),      Go2RecRoughCfgPPO())
+# 以及对应的 PPO-Lagrangian 变体
+</code></pre>
+            </li>
+          </ul>
+          <p>这一步做完，<code>python scripts/train.py --task=go2_pos_rough --num_envs=64</code>
+            能跑起来 reward 曲线在涨，就算移植通了。</p>
+        </div>
+
+        <!-- ========== 2. 首轮 sim2real ========== -->
+        <h3 class="title is-4">2. 首轮 sim2real：把仿真策略直接丢到真机上</h3>
+        <div class="content has-text-justified">
+          <p>这一步<b>不调任何东西</b>，目的就是<i>暴露 gap</i>。用 Go1 默认的域随机化训出
+            agile policy（<code>go2_pos_rough</code>，4000 iters），导出 <code>.onnx</code>
+            部署到 Go2 上跑。观察到的典型问题：</p>
+          <ul>
+            <li><b>加减速点头 / 起步过冲</b>：策略命令变化时基座俯仰幅度明显，
+              怀疑悬臂传感器质量没进 URDF → 指向 URDF 负载修正。</li>
+            <li><b>急转时关节饱和、动作"卡顿"</b>：仿真里能做的急摆真机做不出来 →
+              指向力矩-转速包络。</li>
+            <li><b>目标向量周期性跳变</b>：定位刷新慢于策略 → 指向定位延迟域随机化。</li>
+            <li><b>近距离障碍突然消失</b>：D435i 在贴近时出深度空洞，
+              而仿真 ray 总是有效 → 指向 ray 噪声/丢值的域随机化。</li>
+          </ul>
+          <p>这些观察就是下一步 real2sim 的输入清单。</p>
+        </div>
+
+        <!-- ========== 3. real2sim：URDF 修正 ========== -->
+        <h3 class="title is-4">3. real2sim（A）：URDF 负载修正</h3>
         <div class="content has-text-justified">
           <ul>
             <li>原 URDF 用的是裸 Go2 惯量（base 6.921 kg）。本复现把
               <b>RealSense D435i (0.072 kg @ [0.31, 0, 0.10] m)</b> 与
               <b>Livox MID360 (0.265 kg @ [0.15, 0, 0.13] m)</b> 当作刚性点质量，
-              用<b>平行轴定理</b>合并进 <code>base_link</code> 惯量：
-              质量 6.921 → <b>7.258 kg</b>，<code>com</code> 与
-              <code>inertia</code> 同步重算。</li>
-            <li><b>动机</b>：两个传感器都是悬臂前装，不修正仿真会显著低估俯仰惯量，
-              训出来的策略在真机上加减速时容易点头/过冲。</li>
+              用<b>平行轴定理</b>合并进 <code>base_link</code>：
+              <ul>
+                <li><code>&lt;inertial&gt;&lt;mass&gt;</code>：6.921 → <b>7.258 kg</b></li>
+                <li><code>&lt;origin&gt;</code>（质心）：原点 → <b>沿 +x 前移约 1–2 cm</b>
+                  （按质量加权）</li>
+                <li><code>&lt;inertia&gt;</code>：用平行轴定理把两个点质量贡献到
+                  <code>ixx / iyy / izz</code>（俯仰 <code>iyy</code> 增加最明显）</li>
+              </ul>
+            </li>
+            <li><b>动机</b>：传感器都是<b>悬臂前装</b>，悬臂力矩 = 质量 × 距离²，
+              不修正会让仿真低估俯仰惯量。结果是策略学到的加减速动作
+              真机上点头/过冲，正好对应第 2 步观察到的现象。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">3. real2sim：把实测差距灌进域随机化</h3>
+        <!-- ========== 4. real2sim：DR 对齐 ========== -->
+        <h3 class="title is-4">4. real2sim（B）：实测延迟/力矩灌回域随机化</h3>
         <div class="content has-text-justified">
-          <p>用 <code>tools/measure_sim2real_gap.py</code> 与
-            <code>measure_joint_limits_readonly.py</code> 在实机上量延迟、力矩-转速、
-            关节回零偏置等，再把数值写进 <code>go2_pos_config.py</code> 的
-            <code>class domain_rand</code>：</p>
+          <p>在 Go2 上用 <code>tools/measure_sim2real_gap.py</code> 与
+            <code>measure_joint_limits_readonly.py</code> 记录：
+            policy 输出到关节真正动的端到端延迟、各关节峰值力矩-转速曲线、
+            站立时关节回零偏置；然后改 <code>go2_pos_config.py</code> 的
+            <code>class domain_rand</code> 与 <code>class asset</code>：</p>
           <ul>
             <li><b>关节响应</b>：<code>armature = 0.01</code>
-              （齿轮电机反射惯量，原值 0，会让仿真关节过分"轻快"）。</li>
+              （齿轮电机反射惯量，Go1 默认 0，仿真关节会过分"轻快"）。</li>
             <li><b>动作延迟</b>：<code>action_latency_range = [0, 1]</code> 步
               （实测 sense → actuate ≈ 9 ms，控制环 50 Hz）。</li>
-            <li><b>定位延迟/抖动</b>：<code>loc_latency_range = [1, 3]</code> 步、
-              <code>loc_update_decimation = 2</code>（Livox LIO ≈ 25 Hz）、
+            <li><b>定位延迟/抖动</b>（对应实机的 Livox-LIO）：
+              <code>loc_latency_range = [1, 3]</code> 步、
+              <code>loc_update_decimation = 2</code>（LIO ≈ 25 Hz）、
               yaw 随机游走 <code>loc_yaw_drift_std = 0.005 rad/step</code>，
               偏置上限 0.10 rad。</li>
             <li><b>力矩-转速衰减</b>：<code>torque_speed_derate = True</code>，
@@ -294,44 +380,97 @@ python scripts/train_depth_resnet.py
               防止策略学到真机做不出的急摆。</li>
             <li><b>前向感知延迟</b>：<code>front_lidar_latency_range = [1, 3]</code> 步、
               decimation 2（D435i → ray ≈ 23 ms，慢于控制环）。</li>
-            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → <b>0.5</b>
+            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → <b>0.5</b>，
               重新开启随机推力，逼策略学鲁棒。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">4. 任务与观测调整</h3>
+        <!-- ========== 5. 感知方式切换 ========== -->
+        <h3 class="title is-4">5. 感知与定位方式切换（与仿真观测耦合）</h3>
         <div class="content has-text-justified">
+          <p>这一步的具体节点改动在 <a href="#deploy">部署部分</a>，但它直接决定
+            <b>仿真侧观测如何构造</b>，所以仿真 config 必须同步调整：</p>
           <ul>
-            <li><b>观测维度</b>：base 50 + 前向 ray2d 11 + 侧 / 后 lidar2d 13 =
-              <b>74</b>（原 ABS 为 50 + 21 = 71，无侧后向）。在
-              <code>go2_pos_lidar_config.py</code> 把 <code>num_observations</code>
-              改为 74，policy MLP 输入层同步加宽。</li>
-            <li><b>目标采样范围</b> 0.3–3.0 m → <b>0.2–6.0 m</b>，覆盖实验室更大场地。</li>
-            <li><b>前向射线密度</b> <code>sensors.ray2d.theta_step</code>
-              π/40 (4.5°, 21 条) → <b>π/20 (9°, 11 条)</b>，与 D435i 实际可用
-              FOV 和板载算力对齐。</li>
-            <li><b>定位噪声</b>：对 LIO 推出的目标向量与朝向加白噪声
-              （<code>noise_scales.commands = 0.03</code>），模拟 Livox-LIO 的抖动。</li>
+            <li><b>前向相机：ZED mini → RealSense D435i</b>。ZED mini 自带 VIO
+              输出位姿，D435i 没有，只给深度图 + IMU。这导致两个连锁改动：
+              <ol>
+                <li>仿真 ray 不能再按"原 21 条"全用上：D435i 实际可用 FOV
+                  与板载算力匹配下，把 <code>sensors.ray2d.theta_step</code>
+                  从 π/40 (4.5°, 21 条) 改成 <b>π/20 (9°, 11 条)</b>。</li>
+                <li>位姿不再来自前向相机，改用<b>定位节点</b>给（见下条）。</li>
+              </ol>
+            </li>
+            <li><b>定位：相机 VIO → Livox MID360 + LIO 推出的 odom</b>。
+              这一步主要在实机上做，仿真里的体现是：策略观测中的
+              "到目标向量 / 朝向"被显式当作<b>带延迟、带噪声、低频更新</b>的量来训：
+              <ul>
+                <li>对 commands 加白噪声 <code>noise_scales.commands = 0.03</code></li>
+                <li>更新频率打折 <code>loc_update_decimation = 2</code>（25 Hz）</li>
+                <li>累积 yaw drift（见第 4 节）</li>
+              </ul>
+              这样训出来的策略默认就<b>不信任</b>定位是干净的。</li>
+            <li><b>新增侧 / 后向 2D lidar 观测</b>（来自 MID360 切片）：
+              仿真里在 <code>go2_pos_lidar_config.py</code> 的观测里追加 13 维
+              <code>side_rear_lidar2d</code>，policy MLP 输入层从 71 拉到
+              <b>74</b>。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">5. 训练曲线与仿真评测 <span style="color:#ff3860;">（待补）</span></h3>
+        <!-- ========== 6. 任务范围调整 ========== -->
+        <h3 class="title is-4">6. 任务范围调整</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>目标采样范围</b>：<code>commands.ranges.pos_1</code>
+              0.3–3.0 m → <b>0.2–6.0 m</b>，覆盖实验室更大场地，
+              同时保留近距离训练样本，避免策略在近端绕大圈。</li>
+            <li><b>episode 长度</b>：<code>env.episode_length_s</code>
+              9 s → <b>12 s</b>（目标距离变远要相应给时间）。</li>
+            <li><b>障碍密度</b>：<code>asset.object_num</code>
+              视场地保持 8；若实验室空旷可调到 4–6。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 7. 训练命令与产物 ========== -->
+        <h3 class="title is-4">7. 训练命令与产物</h3>
+        <div class="content has-text-justified">
+          <p>所有 real2sim 改动到位后，按下列顺序重训。产物 <code>.pt</code> 之后用
+            <code>deployment/src/abs_src/onnx_model_converter.py</code> 转为
+            <code>.onnx</code> 给部署节点调用：</p>
+<pre><code># 1) 敏捷策略（Go2，带 lidar 观测）
+python scripts/train.py --task=go2_pos_lidar_rough --max_iterations=4000
+
+# 2) 恢复策略
+python scripts/train.py --task=go2_rec_rough --max_iterations=1000
+
+# 3) 先 play 一次导出 policy 文件夹，再训 Reach-Avoid
+python scripts/play.py    --task=go2_pos_lidar_rough
+python scripts/testbed.py --task=go2_pos_lidar_rough --num_envs=1000 --headless --trainRA
+
+# 4) 采射线训练集 + 训 ray-prediction
+python scripts/camrec.py            --task=go2_pos_lidar_rough --num_envs=3
+python scripts/train_depth_resnet.py
+</code></pre>
+        </div>
+
+        <!-- ========== 8. 评测与踩坑 ========== -->
+        <h3 class="title is-4">8. 训练曲线与仿真评测 <span style="color:#ff3860;">（待补）</span></h3>
         <div class="content has-text-justified">
           <ul>
             <li>（待补）放 TensorBoard 截图：reward / episode_length /
-              collision_rate / success_rate。</li>
+              collision_rate / success_rate（baseline vs. real2sim 对比图最有说服力）。</li>
             <li>（待补）在 <code>play_lidar_eval.py</code> 上跑 N=500 个随机场景，
               报告：成功率、平均到达时间、最高 forward velocity、碰撞率。
-              与原文 Table I 列对比。</li>
+              与原文 Table I 对比。</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">6. 仿真侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <h3 class="title is-4">9. 仿真侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
         <div class="content has-text-justified">
           <ul>
-            <li>（待补）写 2–4 条仿真里真正卡过的：现象 → 定位 → 解决。
-              例如：<i>armature=0 时关节震荡 / RA value 不收敛要先 freeze agile policy /
-              env 数量过大时显存爆 / 仿真步长与控制 decimation 不一致导致延迟翻倍</i> 等。</li>
+            <li>（待补）写 2–4 条真正卡过的：现象 → 定位 → 解决。例如：
+              <i>armature=0 时关节震荡 / RA value 不收敛要先 freeze agile policy /
+              env 数量过大时显存爆 / 仿真步长与控制 decimation 不一致导致延迟翻倍 /
+              Go2 关节名与 Go1 一致但限位不同导致 init_dof 采样溢出</i> 等。</li>
           </ul>
         </div>
       </div>
@@ -341,7 +480,7 @@ python scripts/train_depth_resnet.py
 
 
 <!-- ===================== 部署部分 ===================== -->
-<section class="section" style="background:#fafafa;">
+<section class="section" id="deploy" style="background:#fafafa;">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
