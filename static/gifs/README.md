@@ -1,16 +1,16 @@
-# GIF 素材目录
+# GIF assets
 
-这里放置 4 个实机 GIF 与 4 个仿真 GIF。素材尚未上传时，首页显示预留卡片。
+Place four real-robot GIFs and four simulation GIFs in this directory. Until the assets are uploaded, the landing page shows placeholder cards.
 
-| 区域 | 文件名 | 桌面端位置 |
+| Section | Filename | Desktop position |
 | --- | --- | --- |
-| 实机 | real-01.gif | 第 1 列 |
-| 实机 | real-02.gif | 第 2 列 |
-| 实机 | real-03.gif | 第 3 列 |
-| 实机 | real-04.gif | 第 4 列 |
-| 仿真 | sim-01.gif | 左上 |
-| 仿真 | sim-02.gif | 右上 |
-| 仿真 | sim-03.gif | 左下 |
-| 仿真 | sim-04.gif | 右下 |
+| Real robot | real-01.gif | Column 1 |
+| Real robot | real-02.gif | Column 2 |
+| Real robot | real-03.gif | Column 3 |
+| Real robot | real-04.gif | Column 4 |
+| Simulation | sim-01.gif | Top left |
+| Simulation | sim-02.gif | Top right |
+| Simulation | sim-03.gif | Bottom left |
+| Simulation | sim-04.gif | Bottom right |
 
-实机框按竖屏设计；仿真框按横屏设计。不同画幅会留边，绝不裁剪。请上传可播放的完整 GIF，而非首帧截图。不要把 Mac 本地绝对路径写入 HTML。页面标题暂按编号标注，不据首帧推断成功率、速度或场景测试结论。
+The real-robot slots are designed for portrait media, while the simulation slots are designed for landscape media. Other aspect ratios will have empty margins rather than be cropped. Upload complete, playable GIFs instead of still first-frame images. Do not put local Mac file paths in the HTML. The page uses numbered placeholder titles until the full demonstrations are reviewed; do not infer success rates, speed, or test results from a single frame.
