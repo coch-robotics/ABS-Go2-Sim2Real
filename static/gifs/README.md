@@ -1,16 +1,16 @@
 # GIF assets
 
-Place four real-robot GIFs and four simulation GIFs in this directory. Until the assets are uploaded, the landing page shows placeholder cards.
+The project page uses four real-robot GIFs and four simulation GIFs from this directory.
 
 | Section | Filename | Desktop position |
 | --- | --- | --- |
-| Real robot | real-01.gif | Column 1 |
-| Real robot | real-02.gif | Column 2 |
-| Real robot | real-03.gif | Column 3 |
-| Real robot | real-04.gif | Column 4 |
-| Simulation | sim-01.gif | Top left |
-| Simulation | sim-02.gif | Top right |
-| Simulation | sim-03.gif | Bottom left |
-| Simulation | sim-04.gif | Bottom right |
+| Real robot | real-01.gif | Single obstacle |
+| Real robot | real-02.gif | Corridor traversal |
+| Real robot | real-03.gif | Obstacle field |
+| Real robot | real-04.gif | Narrow passage |
+| Simulation | sim-01.gif | Flat terrain |
+| Simulation | sim-02.gif | Narrow gate |
+| Simulation | sim-03.gif | Staggered obstacles |
+| Simulation | sim-04.gif | Slalom course |
 
-The real-robot slots are designed for portrait media, while the simulation slots are designed for landscape media. Other aspect ratios will have empty margins rather than be cropped. Upload complete, playable GIFs instead of still first-frame images. Do not put local Mac file paths in the HTML. The page uses numbered placeholder titles until the full demonstrations are reviewed; do not infer success rates, speed, or test results from a single frame.
+The real-robot cards preserve the 240 x 426 portrait format, while the simulation cards preserve the 426 x 240 landscape format. Images use `object-fit: contain` so future replacement assets are never cropped. Keep these stable filenames when updating the demos.
