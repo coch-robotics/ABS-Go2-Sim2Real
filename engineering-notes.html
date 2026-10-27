@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <!-- ▼▼ 改这里：网页描述（搜索引擎/分享卡片会用到） ▼▼ -->
+  <meta name="description"
+        content="Agile But Safe (ABS) 复现：在 Unitree Go2 + RealSense D435i + Livox MID360 上复现高速无碰撞四足运动，重点做 sim2real gap 测量与对齐。">
+  <meta name="keywords" content="ABS, Agile But Safe, Go2, sim2real, legged locomotion, reproduction">
+  <!-- ▲▲ 改到这里 ▲▲ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ▼▼ 改这里：浏览器标签页标题 ▼▼ -->
+  <title>ABS 复现 | Agile But Safe on Go2 (D435i + Livox)</title>
+  <!-- ▲▲ 改到这里 ▲▲ -->
+
+  <!-- 注意：原模板这里有 Google Analytics 跟踪代码，复现页不需要，已删除 -->
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <!-- 下面这些是 Bulma 框架样式 + 模板自带 JS，别动 -->
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<!-- ===================== 顶部导航栏 ===================== -->
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <!-- ▼▼ 改这里：主页图标指向你的 GitHub 主页 ▼▼ -->
+      <a class="navbar-item" href="https://github.com/sankeng123">
+        <span class="icon"><i class="fas fa-home"></i></span>
+      </a>
+      <!-- ▲▲ 改到这里 ▲▲ -->
+    </div>
+  </div>
+</nav>
+
+
+<!-- ===================== 标题区 ===================== -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+
+          <!-- ▼▼ 改这里：页面大标题 ▼▼ -->
+          <h1 class="title is-1 publication-title">
+            复现 Agile But Safe<br>
+            <span class="is-size-3">Go2 + D435i + Livox 平台上的 Sim2Real 复现</span>
+          </h1>
+          <!-- ▲▲ 改到这里 ▲▲ -->
+
+          <div class="is-size-5 publication-authors" style="margin-top:0.5rem;">
+            <span class="publication-venue">Reproduction Report · 复现报告</span>
+          </div>
+
+          <!-- ▼▼ 改这里：复现者（你的名字 + 个人主页链接） ▼▼ -->
+          <div class="is-size-5 publication-authors" style="margin-top:0.5rem;">
+            <span class="author-block">
+              复现者 / Reproduced by
+              <a href="https://github.com/sankeng123">你的名字 (Your Name)</a>
+            </span>
+          </div>
+          <!-- ▲▲ 改到这里 ▲▲ -->
+
+          <div class="is-size-6 publication-authors" style="color:#888;margin-top:0.3rem;">
+            原工作：T. He, C. Zhang, W. Xiao et al.,
+            <i>Agile But Safe: Learning Collision-Free High-Speed Legged Locomotion</i>, RSS 2024
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2401.17583"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>原论文 arXiv</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://agile-but-safe.github.io/"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-globe"></i></span>
+                  <span>原项目主页</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/LeCAR-Lab/ABS"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>原代码</span>
+                </a>
+              </span>
+              <!-- ▼▼ 改这里：你自己的复现代码仓库 ▼▼ -->
+              <span class="link-block">
+                <a href="https://github.com/sankeng123/ABS"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>我的复现代码</span>
+                </a>
+              </span>
+              <!-- ▲▲ 改到这里 ▲▲ -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 顶部大图 ===================== -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="./static/images/cover.png" alt="ABS reproduction teaser"
+           style="border-radius:10px;width:100%;">
+      <!--
+        想换成视频时，用这一段替换上面的 <img>（视频文件放 static/videos/）：
+        <video id="teaser" autoplay muted loop playsinline width="100%" style="border-radius:10px;">
+          <source src="./static/videos/teaser.mp4" type="video/mp4">
+        </video>
+      -->
+      <!-- ▼▼ 改这里：大图下面的一句话说明 ▼▼ -->
+      <h2 class="subtitle has-text-centered" style="margin-top:1rem;">
+        将 ABS 适配到 Unitree Go2 + RealSense D435i + Livox MID360，
+        并通过 real2sim 测量缩小 sim2real 差距。
+      </h2>
+      <!-- ▲▲ 改到这里 ▲▲ -->
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 复现结果 ===================== -->
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-3 has-text-centered" style="margin-bottom:0.5rem;">复现结果 Results</h2>
+      <p class="has-text-centered" style="color:#888;margin-bottom:1.5rem;">
+        实机/仿真视频待补 — 拍好后放入 <code>static/videos/</code> 并按下方注释模板添加。
+      </p>
+
+      <!--
+        视频卡片模板（拍好视频后，复制下面这一整块、改 src 文件名，想放几个复制几次）：
+        <div class="item">
+          <video controls muted loop playsinline height="100%">
+            <source src="./static/videos/result1.mp4" type="video/mp4">
+          </video>
+        </div>
+      -->
+      <div id="results-carousel" class="carousel results-carousel">
+        <div class="item">
+          <img src="./static/images/cover.png" alt="overview">
+        </div>
+        <div class="item">
+          <img src="./static/images/systemoverview.png" alt="system overview">
+        </div>
+        <div class="item">
+          <img src="./static/images/hardware.png" alt="hardware setup">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 复现说明 ===================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">复现说明 Overview</h2>
+        <div class="content has-text-justified">
+          <p>
+            <b>原工作。</b> Agile But Safe (ABS, RSS 2024) 让四足机器人在杂乱环境中
+            <b>高速移动的同时避免碰撞</b>：用一个<i>敏捷策略 (agile policy)</i> 追求速度，
+            一个<i>恢复策略 (recovery policy)</i> 在危险时接管，两者由一个基于
+            <i>可达性 (reach-avoid) 值函数</i>的安全门限协同切换，并配合一个
+            从感知预测碰撞风险的网络。
+          </p>
+          <p>
+            <b>本复现的定位。</b> 本项目不是简单跑通官方代码，而是把 ABS
+            <b>迁移到本实验室的硬件平台</b> —— <b>Unitree Go2 + RealSense D435i
+            （前向深度→2D ray）+ Livox MID360（侧/后向 2D lidar 与 LIO 定位）</b> ——
+            并把工作重心放在 <b>sim2real gap 的量化与对齐</b>：先在实机上测量延迟、
+            负载、电机特性，再把这些测量值回灌进仿真 (real2sim) 做域随机化，
+            让训练出的策略在真机上可用。训练在 <i>Isaac Gym</i> 完成，
+            部署为一套 <i>ROS</i> 节点。
+          </p>
+        </div>
+        <img src="./static/images/systemoverview.png" alt="system overview"
+             style="border-radius:8px;width:100%;">
+        <p style="color:#888;font-size:0.9rem;margin-top:0.5rem;">系统总览</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 仿真部分 ===================== -->
+<section class="section" id="sim">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">仿真部分 Simulation</h2>
+        <div class="content has-text-justified">
+          <p>
+            仿真侧基于 ABS 官方代码（<code>training/legged_gym</code> + <code>training/rsl_rl</code>，
+            Isaac Gym Preview 4）。按原文要训四个组件：
+            <b>(1) 敏捷策略 agile policy</b>（PPO）、
+            <b>(2) 恢复策略 recovery policy</b>、
+            <b>(3) Reach-Avoid 值函数</b>、
+            <b>(4) 射线预测网络 ray-prediction</b>。
+            本节按真实推进顺序写：<b>搭环境 → Go1→Go2 移植 → 首轮 sim2real（暴露 gap）
+            → real2sim 反推回仿真 → 观测/任务调整 → 评测/踩坑</b>。
+          </p>
+        </div>
+
+        <!-- ========== 0. 环境搭建 ========== -->
+        <h3 class="title is-4">0. 环境搭建</h3>
+        <div class="content has-text-justified">
+          <p>严格按官方 README 的版本组合来，少踩坑：</p>
+<pre><code># 1) Python 3.8 + PyTorch（CUDA 11.6）
+conda create -n abs python=3.8 -y
+conda activate abs
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 \
+    --extra-index-url https://download.pytorch.org/whl/cu116
+
+# 2) Isaac Gym Preview 4（需手动下载 tar 包）
+cd isaacgym/python && pip install -e .
+# 自检：
+cd examples && python 1080_balls_of_solitude.py
+
+# 3) ABS 仓库本地化
+cd ABS/training
+pip install -e rsl_rl          # ABS 改过的 rsl_rl，必须从 ABS 目录装
+pip install -e legged_gym
+
+# 4) 老版本依赖钉死，否则会和 Isaac Gym 冲突
+pip install "numpy&gt;1.20,&lt;1.24"   # 实测 1.21 最稳
+pip install tensorboard
+pip install setuptools==59.5.0
+</code></pre>
+          <p style="color:#888;">常见坑：</p>
+          <ul>
+            <li><code>numpy ≥ 1.24</code> 会让 Isaac Gym 在解析数组类型时崩。</li>
+            <li><code>setuptools</code> 太新会让 <code>pip install -e</code> 失败。</li>
+            <li>驱动 / CUDA 版本与 PyTorch / Isaac Gym 任一不匹配，
+              <code>num_envs</code> 一大就 CUDA OOM 或 illegal memory access。
+              先用 <code>--num_envs=64</code> 调通再放大。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 1. Go1 → Go2 移植 ========== -->
+        <h3 class="title is-4">1. 把训练目标从 Go1 切到 Go2</h3>
+        <div class="content has-text-justified">
+          <p>ABS 原仓库只给 Go1 的任务，所以要把整套训练流程平移到 Go2。
+            涉及的文件清单（路径相对 <code>training/legged_gym/legged_gym/</code>）：</p>
+          <ul>
+            <li><b>新增 URDF</b>：<code>resources/robots/go2/urdf/go2_description.urdf</code>
+              （取自 Unitree 官方 go2 描述包，含 mesh）。</li>
+            <li><b>新增 Go2 配置</b>：把 <code>envs/go1/</code> 下的三份配置整体复制成
+              <code>envs/go2/</code>：<code>go2_config.py</code> /
+              <code>go2_pos_config.py</code> / <code>go2_rec_config.py</code>，逐项改：
+              <ul>
+                <li><code>asset.file</code>：<code>go1.urdf</code> →
+                  <code>go2_description.urdf</code>；<code>asset.name = "go2"</code>。</li>
+                <li><code>init_state.pos</code>：Go1 站高 <code>0.37 m</code> →
+                  Go2 实测 <b><code>0.34 m</code></b>（Go2 腿稍短）。</li>
+                <li><code>init_state.default_joint_angles</code>：保留
+                  <code>FL/FR/RL/RR_{hip,thigh,calf}_joint</code> 命名（Go2 关节名一致），
+                  但 <code>thigh = 0.9</code>、<code>calf = -1.8</code>
+                  以匹配 Go2 的腿长比例（Go1 是 0.8 / -1.5）。</li>
+                <li><code>control.stiffness / damping</code>：Go1 用 30 / 0.65，
+                  Go2 电机更"硬"，初版按 Unitree SDK 默认改为
+                  <b>40 / 1.0</b> 再回归调。</li>
+                <li><code>asset.foot_name</code> 保持 <code>"foot"</code>，
+                  接触惩罚 link 名 <code>"thigh"/"calf"</code> 不变。</li>
+              </ul>
+            </li>
+            <li><b>新增 lidar 增强配置</b>：再复制一份
+              <code>go2_pos_lidar_config.py</code>，<code>num_observations</code>
+              从 50+21=71 改成 <b>50+11+13=74</b>，给侧/后 2D lidar 留位置。</li>
+            <li><b>注册任务</b>：编辑 <code>envs/__init__.py</code>，加：
+<pre><code>task_registry.register("go2_rough",            LeggedRobot,    Go2RoughCfg(),         Go2RoughCfgPPO())
+task_registry.register("go2_pos_rough",        LeggedRobotPos, Go2PosRoughCfg(),      Go2PosRoughCfgPPO())
+task_registry.register("go2_pos_lidar_rough",  LeggedRobotPos, Go2PosLidarRoughCfg(), Go2PosLidarRoughCfgPPO())
+task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),      Go2RecRoughCfgPPO())
+# 以及对应的 PPO-Lagrangian 变体
+</code></pre>
+            </li>
+          </ul>
+          <p>这一步做完，<code>python scripts/train.py --task=go2_pos_rough --num_envs=64</code>
+            能跑起来 reward 曲线在涨，就算移植通了。</p>
+        </div>
+
+        <!-- ========== 2. 首轮 sim2real ========== -->
+        <h3 class="title is-4">2. 首轮 sim2real：把仿真策略直接丢到真机上</h3>
+        <div class="content has-text-justified">
+          <p>这一步<b>不调任何东西</b>，目的就是<i>暴露 gap</i>。用 Go1 默认的域随机化训出
+            agile policy（<code>go2_pos_rough</code>，4000 iters），导出 <code>.onnx</code>
+            部署到 Go2 上跑。观察到的典型问题：</p>
+          <ul>
+            <li><b>加减速点头 / 起步过冲</b>：策略命令变化时基座俯仰幅度明显，
+              怀疑悬臂传感器质量没进 URDF → 指向 URDF 负载修正。</li>
+            <li><b>急转时关节饱和、动作"卡顿"</b>：仿真里能做的急摆真机做不出来 →
+              指向力矩-转速包络。</li>
+            <li><b>目标向量周期性跳变</b>：定位刷新慢于策略 → 指向定位延迟域随机化。</li>
+            <li><b>近距离障碍突然消失</b>：D435i 在贴近时出深度空洞，
+              而仿真 ray 总是有效 → 指向 ray 噪声/丢值的域随机化。</li>
+          </ul>
+          <p>这些观察就是下一步 real2sim 的输入清单。</p>
+        </div>
+
+        <!-- ========== 3. real2sim：URDF 修正 ========== -->
+        <h3 class="title is-4">3. real2sim（A）：URDF 负载修正</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>原 URDF 用的是裸 Go2 惯量（base 6.921 kg）。本复现把
+              <b>RealSense D435i (0.072 kg @ [0.31, 0, 0.10] m)</b> 与
+              <b>Livox MID360 (0.265 kg @ [0.15, 0, 0.13] m)</b> 当作刚性点质量，
+              用<b>平行轴定理</b>合并进 <code>base_link</code>：
+              <ul>
+                <li><code>&lt;inertial&gt;&lt;mass&gt;</code>：6.921 → <b>7.258 kg</b></li>
+                <li><code>&lt;origin&gt;</code>（质心）：原点 → <b>沿 +x 前移约 1–2 cm</b>
+                  （按质量加权）</li>
+                <li><code>&lt;inertia&gt;</code>：用平行轴定理把两个点质量贡献到
+                  <code>ixx / iyy / izz</code>（俯仰 <code>iyy</code> 增加最明显）</li>
+              </ul>
+            </li>
+            <li><b>动机</b>：传感器都是<b>悬臂前装</b>，悬臂力矩 = 质量 × 距离²，
+              不修正会让仿真低估俯仰惯量。结果是策略学到的加减速动作
+              真机上点头/过冲，正好对应第 2 步观察到的现象。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 4. real2sim：DR 对齐 ========== -->
+        <h3 class="title is-4">4. real2sim（B）：实测延迟/力矩灌回域随机化</h3>
+        <div class="content has-text-justified">
+          <p>在 Go2 上用 <code>tools/measure_sim2real_gap.py</code> 与
+            <code>measure_joint_limits_readonly.py</code> 记录：
+            policy 输出到关节真正动的端到端延迟、各关节峰值力矩-转速曲线、
+            站立时关节回零偏置；然后改 <code>go2_pos_config.py</code> 的
+            <code>class domain_rand</code> 与 <code>class asset</code>：</p>
+          <ul>
+            <li><b>关节响应</b>：<code>armature = 0.01</code>
+              （齿轮电机反射惯量，Go1 默认 0，仿真关节会过分"轻快"）。</li>
+            <li><b>动作延迟</b>：<code>action_latency_range = [0, 1]</code> 步
+              （实测 sense → actuate ≈ 9 ms，控制环 50 Hz）。</li>
+            <li><b>定位延迟/抖动</b>（对应实机的 Livox-LIO）：
+              <code>loc_latency_range = [1, 3]</code> 步、
+              <code>loc_update_decimation = 2</code>（LIO ≈ 25 Hz）、
+              yaw 随机游走 <code>loc_yaw_drift_std = 0.005 rad/step</code>，
+              偏置上限 0.10 rad。</li>
+            <li><b>力矩-转速衰减</b>：<code>torque_speed_derate = True</code>，
+              用 URDF 峰值力矩 / 最大转速构造线性包络（floor 10%），
+              防止策略学到真机做不出的急摆。</li>
+            <li><b>前向感知延迟</b>：<code>front_lidar_latency_range = [1, 3]</code> 步、
+              decimation 2（D435i → ray ≈ 23 ms，慢于控制环）。</li>
+            <li><b>外扰</b>：<code>max_push_vel_xy</code> 0.0 → <b>0.5</b>，
+              重新开启随机推力，逼策略学鲁棒。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 5. 感知方式切换 ========== -->
+        <h3 class="title is-4">5. 感知与定位方式切换（与仿真观测耦合）</h3>
+        <div class="content has-text-justified">
+          <p>这一步的具体节点改动在 <a href="#deploy">部署部分</a>，但它直接决定
+            <b>仿真侧观测如何构造</b>，所以仿真 config 必须同步调整：</p>
+          <ul>
+            <li><b>前向相机：ZED mini → RealSense D435i</b>。ZED mini 自带 VIO
+              输出位姿，D435i 没有，只给深度图 + IMU。这导致两个连锁改动：
+              <ol>
+                <li>仿真 ray 不能再按"原 21 条"全用上：D435i 实际可用 FOV
+                  与板载算力匹配下，把 <code>sensors.ray2d.theta_step</code>
+                  从 π/40 (4.5°, 21 条) 改成 <b>π/20 (9°, 11 条)</b>。</li>
+                <li>位姿不再来自前向相机，改用<b>定位节点</b>给（见下条）。</li>
+              </ol>
+            </li>
+            <li><b>定位：相机 VIO → Livox MID360 + LIO 推出的 odom</b>。
+              这一步主要在实机上做，仿真里的体现是：策略观测中的
+              "到目标向量 / 朝向"被显式当作<b>带延迟、带噪声、低频更新</b>的量来训：
+              <ul>
+                <li>对 commands 加白噪声 <code>noise_scales.commands = 0.03</code></li>
+                <li>更新频率打折 <code>loc_update_decimation = 2</code>（25 Hz）</li>
+                <li>累积 yaw drift（见第 4 节）</li>
+              </ul>
+              这样训出来的策略默认就<b>不信任</b>定位是干净的。</li>
+            <li><b>新增侧 / 后向 2D lidar 观测</b>（来自 MID360 切片）：
+              仿真里在 <code>go2_pos_lidar_config.py</code> 的观测里追加 13 维
+              <code>side_rear_lidar2d</code>，policy MLP 输入层从 71 拉到
+              <b>74</b>。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 6. 任务范围调整 ========== -->
+        <h3 class="title is-4">6. 任务范围调整</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>目标采样范围</b>：<code>commands.ranges.pos_1</code>
+              0.3–3.0 m → <b>0.2–6.0 m</b>，覆盖实验室更大场地，
+              同时保留近距离训练样本，避免策略在近端绕大圈。</li>
+            <li><b>episode 长度</b>：<code>env.episode_length_s</code>
+              9 s → <b>12 s</b>（目标距离变远要相应给时间）。</li>
+            <li><b>障碍密度</b>：<code>asset.object_num</code>
+              视场地保持 8；若实验室空旷可调到 4–6。</li>
+          </ul>
+        </div>
+
+        <!-- ========== 7. 训练命令与产物 ========== -->
+        <h3 class="title is-4">7. 训练命令与产物</h3>
+        <div class="content has-text-justified">
+          <p>所有 real2sim 改动到位后，按下列顺序重训。产物 <code>.pt</code> 之后用
+            <code>deployment/src/abs_src/onnx_model_converter.py</code> 转为
+            <code>.onnx</code> 给部署节点调用：</p>
+<pre><code># 1) 敏捷策略（Go2，带 lidar 观测）
+python scripts/train.py --task=go2_pos_lidar_rough --max_iterations=4000
+
+# 2) 恢复策略
+python scripts/train.py --task=go2_rec_rough --max_iterations=1000
+
+# 3) 先 play 一次导出 policy 文件夹，再训 Reach-Avoid
+python scripts/play.py    --task=go2_pos_lidar_rough
+python scripts/testbed.py --task=go2_pos_lidar_rough --num_envs=1000 --headless --trainRA
+
+# 4) 采射线训练集 + 训 ray-prediction
+python scripts/camrec.py            --task=go2_pos_lidar_rough --num_envs=3
+python scripts/train_depth_resnet.py
+</code></pre>
+        </div>
+
+        <!-- ========== 8. 评测与踩坑 ========== -->
+        <h3 class="title is-4">8. 训练曲线与仿真评测 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）放 TensorBoard 截图：reward / episode_length /
+              collision_rate / success_rate（baseline vs. real2sim 对比图最有说服力）。</li>
+            <li>（待补）在 <code>play_lidar_eval.py</code> 上跑 N=500 个随机场景，
+              报告：成功率、平均到达时间、最高 forward velocity、碰撞率。
+              与原文 Table I 对比。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">9. 仿真侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）写 2–4 条真正卡过的：现象 → 定位 → 解决。例如：
+              <i>armature=0 时关节震荡 / RA value 不收敛要先 freeze agile policy /
+              env 数量过大时显存爆 / 仿真步长与控制 decimation 不一致导致延迟翻倍 /
+              Go2 关节名与 Go1 一致但限位不同导致 init_dof 采样溢出</i> 等。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 部署部分 ===================== -->
+<section class="section" id="deploy" style="background:#fafafa;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">部署部分 Deployment</h2>
+        <div class="content has-text-justified">
+          <p>
+            部署侧基于 ABS 的 ROS pipeline，但本体由 <b>Go1 → Go2</b>，前视相机由
+            <b>ZED mini → RealSense D435i</b>，并额外引入 <b>Livox MID360</b>
+            做侧/后向 2D lidar 与 LIO 定位。整套节点跑在板载 <b>Orin NX (16GB)</b>，
+            通过 Unitree Go2 低层控制接口下发关节命令。
+          </p>
+        </div>
+
+        <h3 class="title is-4">1. 硬件平台</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>Robot</b>: Unitree Go2 EDU（替换原 Go1）</li>
+            <li><b>前向感知</b>: Intel RealSense D435i（替换原 ZED mini）</li>
+            <li><b>侧 / 后向感知 + 定位</b>: Livox MID360（新增）</li>
+            <li><b>板载算力</b>: NVIDIA Jetson Orin NX 16GB</li>
+            <li><b>状态指示</b>: PSEQT LED Lights（沿用原方案）</li>
+            <li><b>电源</b>: Pololu 12V 15A Step-Down Regulator D24V150F12</li>
+          </ul>
+        </div>
+        <div class="content has-text-centered">
+          <img src="./static/images/hardware.png" alt="hardware"
+               style="border-radius:8px;width:75%;">
+        </div>
+
+        <h3 class="title is-4">2. 感知管线适配</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><b>前向深度 → ray</b>：新增
+              <code>d435_preprocess_node</code> /
+              <code>publisher_depthimg_linvel_d435.py</code>，
+              从 D435i 深度图沿 11 条等角射线取最近障碍物距离，
+              并发布 <code>/odom_linvel</code> 给策略当 base lin-vel 估计。</li>
+            <li><b>侧 / 后向 2D lidar</b>：新增
+              <code>livox_side_lidar_node</code> /
+              <code>print_zed_front_lidar</code>，从 MID360 的 3D 点云按
+              base 高度切片得到 2D 距离，喂给 <code>go2_pos_lidar</code> 策略的
+              附加 13 维观测。</li>
+            <li><b>定位</b>：MID360 + LIO 提供 <code>/Odometry</code>，频率 ≈ 25 Hz；
+              下游节点对位姿再做插值与噪声裁剪。</li>
+            <li><b>模型转换</b>：训练得到的 <code>.pt</code>（agile / recovery / RA）
+              用 <code>onnx_model_converter.py</code> 转为 <code>.onnx</code>，
+              在 Orin NX 上以 ONNXRuntime 推理。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">3. ROS 节点与启动顺序</h3>
+        <div class="content has-text-justified">
+<pre><code># 1) ROS 与 Go2 低层模式
+roscore
+# 手柄: L2+A → L2+B → L1+L2+Start  进入低层控制
+
+# 2) 传感器预处理 + 定位
+python publisher_depthimg_linvel_d435.py            # D435i 深度 → ray + linvel
+rosrun livox_ros_driver2 livox_ros_driver2_node     # MID360 点云
+roslaunch fast_lio mapping.launch                   # LIO → /Odometry
+
+# 3) LED 安全指示（颜色由 RA value 决定）
+python led_control_ros.py
+
+# 4) 主控（agile + recovery 切换 + Go2 下发关节）
+python depth_obstacle_depth_goal_ros.py
+</code></pre>
+          <p>主控里同时挂着两份策略：<b>agile</b> 平时跑；当 RA 值跌破阈值，切
+            <b>recovery</b> 接管把机器人拽回安全集；LED 同步切红色提示操作者。</p>
+        </div>
+
+        <h3 class="title is-4">4. 手柄控制映射</h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li><code>B</code>：紧急停止</li>
+            <li><code>Default</code>：按目标命令运行 ABS</li>
+            <li><code>L2 / R2</code>：左转 / 右转</li>
+            <li><code>Down / Up</code>：后退 / 站立</li>
+            <li><code>A</code>：原地转身</li>
+            <li><code>X</code>：回到初始位置</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">5. 实机评测 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）N 次试跑的成功率 / 碰撞次数 / 最高 forward velocity。</li>
+            <li>（待补）2–3 段实机视频放进 <code>static/videos/</code>，
+              在上方 <i>Results</i> 走马灯里挂出来。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">6. 部署侧踩过的坑 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <ul>
+            <li>（待补）建议每条写：现象 → 怎么定位 → 怎么解决。
+              例如：<i>D435i 深度空洞导致 ray 跳变（中值滤波 + 失败值用上一帧）/
+              LIO 在快速转向时 yaw 漂移（提高 IMU 权重 / 限制角速度）/
+              力矩饱和点头（开 torque_speed_derate 重训）/ Go2 SDK 与 Go1 在
+              关节顺序上的差异</i> 等。</li>
+          </ul>
+        </div>
+
+        <h3 class="title is-4">7. 复现结论 <span style="color:#ff3860;">（待补）</span></h3>
+        <div class="content has-text-justified">
+          <p>（待补）复现到什么程度：仿真成功率 / 实机成功率 / 最高速度，
+            与原文指标对比，差距及可能原因。<b>没有实测数据前别写数字。</b></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== 引用原论文 ===================== -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">引用原论文 BibTeX</h2>
+    <p>复现页引用的是<b>原论文</b>，不要改成自己：</p>
+    <pre><code>@inproceedings{he2024agile,
+  title     = {Agile But Safe: Learning Collision-Free High-Speed Legged Locomotion},
+  author    = {He, Tairan and Zhang, Chong and Xiao, Wenli and He, Guanqi
+               and Liu, Changliu and Shi, Guanya},
+  booktitle = {Robotics: Science and Systems (RSS)},
+  year      = {2024}
+}</code></pre>
+  </div>
+</section>
+
+
+<!-- ===================== 页脚 ===================== -->
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p>
+            本页面是对
+            <a href="https://agile-but-safe.github.io/">Agile But Safe (RSS 2024)</a>
+            的非官方复现，原工作版权归原作者所有。
+          </p>
+          <!-- 下面这句是模板开源协议要求保留的来源声明，别删 -->
+          <p>
+            Website template borrowed from
+            <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>
+            (CC BY-SA 4.0).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
