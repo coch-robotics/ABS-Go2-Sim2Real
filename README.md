@@ -1,21 +1,21 @@
 # ABS on Go2
 
-陈聪的四足机器人项目展示页：Go1 → Go2 跨平台适配、仿真训练与真机部署。
+A quadruped robotics project page by Cong Chen, covering Go1-to-Go2 adaptation, simulation training, and deployment on a real robot.
 
-这是基于 Agile But Safe 的个人复现与工程实践展示，不是原论文官方项目页，也不是完整训练代码仓库。
+This page presents an independent reproduction and engineering application of Agile But Safe. It is not the official project page for the original paper or a complete training code repository.
 
-## 页面结构
+## Page structure
 
-- `index.html`：独立静态首页，实机演示在前，仿真演示在后。
-- 实机区：4 个竖屏位置，桌面端一行四列；平板和手机端两列。
-- 仿真区：4 个横屏位置，桌面端 2 × 2；手机端单列。
-- 点击已加载素材可放大，Escape 或关闭按钮退出。
-- 缺失素材显示占位卡，不伪装成已完成的演示。
-- `engineering-notes.html`：保留改版前的完整原页面，包含未完善的工程记录。
+- `index.html`: A standalone static landing page with real-robot demonstrations before simulation demonstrations.
+- Real-robot gallery: Four portrait slots in one row on desktop and two columns on tablet and mobile.
+- Simulation gallery: Four landscape slots in a 2 × 2 grid on desktop and one column on mobile.
+- Available media can be enlarged by clicking it; press Escape or use the close button to exit.
+- Missing media is shown as a placeholder rather than as a completed demonstration.
+- `engineering-notes.html`: Preserves the full previous page, including unfinished engineering notes.
 
-## 添加 8 个 GIF
+## Add eight GIFs
 
-把文件复制到 `static/gifs/`，使用以下文件名，顺序从左到右、从上到下：
+Copy the files into `static/gifs/` using these case-sensitive names. The display order is left to right, then top to bottom:
 
 ```text
 static/gifs/
@@ -29,20 +29,20 @@ static/gifs/
 └── sim-04.gif
 ```
 
-`real` 为实机；`sim` 为仿真。保留 GIF 原始画幅，页面不会裁剪主体。文件名区分大小写。当前仓库已预留全部展示位，正式 GIF 尚未导入。
+`real` denotes real-robot demonstrations, and `sim` denotes simulations. The page preserves each GIF's original aspect ratio without cropping the subject. All eight display slots are ready, but the final GIFs have not yet been added to this repository.
 
-Mac 上的 `/Users/...` 是本机路径，不能直接用作网站图片地址。请复制文件到仓库中的上述目录并提交。先复制后重命名即可，不必改动原文件。
+A local Mac path such as `/Users/...` cannot be used as an image URL on the website. Copy the GIFs into the repository directory above and commit them. You can rename the copies without changing the original files.
 
-场景标题暂用中性编号。确认完整演示内容后，可在 `index.html` 中修改对应 `h3`、`data-title`、`aria-label` 和 `alt`。实机、仿真编号不代表同条件的对照实验；演示本身不证明统计成功率或性能提升。
+The scene titles are neutral numbered labels for now. After reviewing the full demonstrations, update the corresponding `h3`, `data-title`, `aria-label`, and `alt` values in `index.html` if needed. The real-robot and simulation numbers do not imply paired tests under identical conditions. The demonstrations alone do not establish a statistical success rate or performance improvement.
 
-## 本地预览
+## Local preview
 
-首页无需构建工具或第三方 CDN。可用浏览器打开 `index.html`；也可在仓库根目录执行 `python3 -m http.server 8000`，访问 `http://localhost:8000`。没有正式 GIF 时看到占位图是正常情况。
+The landing page needs no build tools or third-party CDN. Open `index.html` in a browser, or run `python3 -m http.server 8000` from the repository root and visit `http://localhost:8000`. Placeholders are expected until the final GIFs are added.
 
-## 来源与许可
+## Sources and license
 
-- ABS 原项目：https://agile-but-safe.github.io/
-- ABS 官方代码：https://github.com/LeCAR-Lab/ABS
-- 原网页模板：Nerfies，https://nerfies.github.io/
+- Original ABS project: https://agile-but-safe.github.io/
+- Official ABS code: https://github.com/LeCAR-Lab/ABS
+- Original website template, Nerfies: https://nerfies.github.io/
 
-原站点基于 Nerfies 模板；本版重新整理首页布局并保留来源致谢。网站沿用 [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/) 许可说明。原算法和原项目的权利归其各自作者所有。
+The site is adapted from the Nerfies template. This version reorganizes the landing page and retains attribution to the template. The website retains the [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/) license notice. The original algorithm and project remain the work of their respective authors.
