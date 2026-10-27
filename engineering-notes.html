@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <!-- Page description (used by search engines and link previews) -->
   <meta name="description"
-        content="Agile But Safe (ABS) reproduction on Unitree Go2 with RealSense D435i and Livox MID360, focusing on measuring and narrowing the sim-to-real gap for collision-free high-speed quadruped locomotion.">
-  <meta name="keywords" content="ABS, Agile But Safe, Go2, sim2real, legged locomotion, reproduction">
+        content="Agile But Safe (ABS) reproduction on Unitree Go2 with RealSense D435i and Livox MID360, focusing on measuring and narrowing the Sim-to-Real gap for collision-free high-speed quadruped locomotion.">
+  <meta name="keywords" content="ABS, Agile But Safe, Go2, sim-to-real, legged locomotion, reproduction">
   <!-- End of editable section -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -112,12 +112,12 @@
                   <span>Original Code</span>
                 </a>
               </span>
-              <!-- Reproduction code repository -->
+              <!-- Project repository -->
               <span class="link-block">
-                <a href="https://github.com/coch-robotics/ABS"
+                <a href="https://github.com/coch-robotics/ABS-Go2-Sim2Real"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon"><i class="fab fa-github"></i></span>
-                  <span>Reproduction Code (private)</span>
+                  <span>Project Repository</span>
                 </a>
               </span>
               <!-- End of editable section -->
@@ -137,16 +137,10 @@
     <div class="hero-body">
       <img src="./static/images/cover.png" alt="ABS reproduction teaser"
            style="border-radius:10px;width:100%;">
-      <!--
-        To use a video, replace the image above with this block (place the video in static/videos/):
-        <video id="teaser" autoplay muted loop playsinline width="100%" style="border-radius:10px;">
-          <source src="./static/videos/teaser.mp4" type="video/mp4">
-        </video>
-      -->
       <!-- Caption beneath the hero image -->
       <h2 class="subtitle has-text-centered" style="margin-top:1rem;">
         Adapted ABS to Unitree Go2 with RealSense D435i and Livox MID360,
-        using real-to-sim measurements to narrow the sim-to-real gap.
+        using Real-to-Sim measurements to narrow the Sim-to-Real gap.
       </h2>
       <!-- End of editable section -->
     </div>
@@ -160,17 +154,9 @@
     <div class="container">
       <h2 class="title is-3 has-text-centered" style="margin-bottom:0.5rem;">Reproduction Results</h2>
       <p class="has-text-centered" style="color:#888;margin-bottom:1.5rem;">
-        Real-world and simulation videos are not yet available. Add them to <code>static/videos/</code> and follow the commented template below.
+        Selected project diagrams are shown here. Real-world and simulation rollouts are presented on the project homepage.
       </p>
 
-      <!--
-        Video card template (copy the whole block and change the src filename for each video):
-        <div class="item">
-          <video controls muted loop playsinline height="100%">
-            <source src="./static/videos/result1.mp4" type="video/mp4">
-          </video>
-        </div>
-      -->
       <div id="results-carousel" class="carousel results-carousel">
         <div class="item">
           <img src="./static/images/cover.png" alt="overview">
@@ -196,18 +182,19 @@
         <div class="content has-text-justified">
           <p>
             <b>Original work.</b> Agile But Safe (ABS, RSS 2024) enables quadrupeds to move through cluttered environments
-            <b>at high speed while avoiding collisions</b>. An <i>agile policy</i> pursues speed,
-            while a <i>recovery policy</i> takes over when risk rises. A safety threshold based on
-            a <i>reach-avoid value function</i> coordinates the switch between them, together with
-            a network that predicts collision risk from perception.
+            <b>at high speed while avoiding collisions</b>. An <i>Agile Policy</i> pursues speed,
+            while a <i>Recovery Policy</i> takes over when risk rises. A safety threshold based on
+            a <i>Reach-Avoid (RA) value function</i> coordinates the switch between them. A separate
+            <i>Ray Prediction Network</i> estimates obstacle-distance rays from camera observations.
           </p>
           <p>
             <b>Scope of this reproduction.</b> Rather than merely running the official code, this project adapts ABS
             <b>to a different hardware platform</b>: <b>Unitree Go2 + RealSense D435i
-            (forward depth to 2D rays) + Livox MID360 (side/rear 2D lidar and LIO localization)</b>.
-            The emphasis is on <b>quantifying and narrowing the sim-to-real gap</b>: measuring latency,
+            (forward depth to 2D rays) + Livox MID360 (side/rear 2D LiDAR observations and LIO localization)</b>.
+            The displayed hardware validation focuses on the <b>Agile Policy</b> deployment path.
+            The emphasis is on <b>quantifying and narrowing the Sim-to-Real gap</b>: measuring latency,
             payload, and motor characteristics on the robot, then feeding those measurements back into
-            simulation (real-to-sim) for domain randomization. Training is performed in <i>Isaac Gym</i>,
+            simulation (Real-to-Sim) for domain randomization. Training is performed in <i>Isaac Gym</i>,
             with deployment through a set of <i>ROS</i> nodes.
           </p>
         </div>
@@ -230,12 +217,14 @@
           <p>
             The simulation work builds on the official ABS code (<code>training/legged_gym</code> + <code>training/rsl_rl</code>)
             and Isaac Gym Preview 4. The original method trains four components:
-            <b>(1) an agile policy</b> (PPO),
-            <b>(2) a recovery policy</b>,
-            <b>(3) a reach-avoid value function</b>, and
-            <b>(4) a ray-prediction network</b>.
-            This section follows the practical sequence: <b>environment setup → Go1-to-Go2 port → initial sim-to-real test (revealing the gap)
-            → real-to-sim calibration → observation/task adjustments → evaluation and troubleshooting</b>.
+            <b>(1) an Agile Policy</b> (PPO),
+            <b>(2) a Recovery Policy</b>,
+            <b>(3) a Reach-Avoid (RA) value network</b>, and
+            <b>(4) a Ray Prediction Network</b>.
+            The original Ray Prediction Network predicts obstacle-distance rays from camera input; in this Go2 adaptation,
+            D435i depth is converted into forward rays and MID360 LiDAR supplies side/rear distance observations.
+            This section follows the practical sequence: <b>environment setup → Go1-to-Go2 port → initial Sim-to-Real test (revealing the gap)
+            → Real-to-Sim calibration → observation/task adjustments → evaluation and troubleshooting</b>.
           </p>
         </div>
 
@@ -301,9 +290,9 @@ pip install setuptools==59.5.0
                   the contact-penalty link names <code>"thigh"/"calf"</code> remain unchanged.</li>
               </ul>
             </li>
-            <li><b>Add a lidar-enhanced configuration</b>: create
+            <li><b>Add a LiDAR-enhanced configuration</b>: create
               <code>go2_pos_lidar_config.py</code>; <code>num_observations</code>
-              changes from 50+21=71 to <b>50+11+13=74</b> to include side/rear 2D lidar.</li>
+              changes from 50+21=71 to <b>50+11+13=74</b> to include side/rear 2D LiDAR observations.</li>
             <li><b>Register the tasks</b>: edit <code>envs/__init__.py</code>, adding:
 <pre><code>task_registry.register("go2_rough",            LeggedRobot,    Go2RoughCfg(),         Go2RoughCfgPPO())
 task_registry.register("go2_pos_rough",        LeggedRobotPos, Go2PosRoughCfg(),      Go2PosRoughCfgPPO())
@@ -320,7 +309,7 @@ task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),
         <!-- ========== 2. Initial sim-to-real test ========== -->
         <h3 class="title is-4">2. Initial Sim-to-Real Test: Deploying the Simulation Policy Directly</h3>
         <div class="content has-text-justified">
-          <p>This step makes <b>no adjustments</b>; its purpose is to <i>expose the gap</i>. Train the agile policy
+          <p>This step makes <b>no adjustments</b>; its purpose is to <i>expose the gap</i>. Train the Agile Policy
             (<code>go2_pos_rough</code>, 4,000 iterations) with Go1’s default domain randomization, export it to <code>.onnx</code>,
             and deploy it on Go2. Typical observed issues:</p>
           <ul>
@@ -332,7 +321,7 @@ task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),
             <li><b>Nearby obstacles disappear</b>: the D435i produces depth holes at close range,
               while simulated rays are always valid, motivating ray-noise and dropout randomization.</li>
           </ul>
-          <p>These observations form the input list for the next real-to-sim step.</p>
+          <p>These observations form the input list for the next Real-to-Sim step.</p>
         </div>
 
         <!-- ========== 3. Real-to-sim: URDF correction ========== -->
@@ -409,7 +398,7 @@ task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),
                 <li>accumulate yaw drift (see section 4)</li>
               </ul>
               The resulting policy does <b>not assume</b> that localization is noise-free.</li>
-            <li><b>Add side/rear 2D lidar observations</b> from MID360 slices:
+            <li><b>Add side/rear 2D LiDAR observations</b> from MID360 slices:
               in simulation, append 13 <code>side_rear_lidar2d</code> dimensions in <code>go2_pos_lidar_config.py</code>,
               increasing the policy MLP input from 71 to <b>74</b>.</li>
           </ul>
@@ -432,42 +421,42 @@ task_registry.register("go2_rec_rough",        LeggedRobotRec, Go2RecRoughCfg(),
         <!-- ========== 7. Training Commands and Outputs ========== -->
         <h3 class="title is-4">7. Training Commands and Outputs</h3>
         <div class="content has-text-justified">
-          <p>After all real-to-sim changes are in place, retrain in this order. Convert the resulting <code>.pt</code>
+          <p>After all Real-to-Sim changes are in place, retrain in this order. Convert the resulting <code>.pt</code>
             models to <code>.onnx</code> for deployment with
             <code>deployment/src/abs_src/onnx_model_converter.py</code>:</p>
-<pre><code># 1) Agile policy (Go2, with lidar observations)
+<pre><code># 1) Agile Policy (Go2, with LiDAR observations)
 python scripts/train.py --task=go2_pos_lidar_rough --max_iterations=4000
 
-# 2) Recovery policy
+# 2) Recovery Policy
 python scripts/train.py --task=go2_rec_rough --max_iterations=1000
 
 # 3) Run play once to export the policy directory, then train Reach-Avoid
 python scripts/play.py    --task=go2_pos_lidar_rough
 python scripts/testbed.py --task=go2_pos_lidar_rough --num_envs=1000 --headless --trainRA
 
-# 4) Collect ray training data and train ray prediction
+# 4) Collect ray training data and train the Ray Prediction Network
 python scripts/camrec.py            --task=go2_pos_lidar_rough --num_envs=3
 python scripts/train_depth_resnet.py
 </code></pre>
         </div>
 
         <!-- ========== 8. Evaluation and troubleshooting ========== -->
-        <h3 class="title is-4">8. Training Curves and Simulation Evaluation <span style="color:#ff3860;">(pending)</span></h3>
+        <h3 class="title is-4">8. Simulation Evaluation Protocol</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>(pending) Add TensorBoard screenshots for reward / episode_length /
-              collision_rate / success_rate (baseline versus real-to-sim comparison plots are most informative).</li>
-            <li>(pending) Run N=500 random scenarios with <code>play_lidar_eval.py</code>,
-              and report success rate, mean time to goal, maximum forward velocity, and collision rate.
-              Compare against Table I in the original paper.</li>
+            <li>Track reward, episode length, collision rate, and success rate in TensorBoard;
+              baseline-versus-Real-to-Sim comparisons provide the clearest diagnostic view.</li>
+            <li>Use <code>play_lidar_eval.py</code> for randomized-scenario evaluation and record
+              success rate, mean time to goal, maximum forward velocity, and collision rate under a fixed protocol.
+              Comparisons with Table I in the original paper require matched conditions.</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">9. Simulation Troubleshooting <span style="color:#ff3860;">(pending)</span></h3>
+        <h3 class="title is-4">9. Simulation Diagnostics</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>(pending) Document 2–4 real blockers: symptom → diagnosis → resolution. Examples:
-              <i>joint oscillation with armature=0 / freezing the agile policy before RA value converges /
+            <li>Record each engineering issue as symptom → diagnosis → resolution. Representative diagnostic categories include:
+              <i>joint oscillation with armature=0 / freezing the Agile Policy before RA value converges /
               GPU OOM with too many environments / latency doubling when simulation timestep and control decimation disagree /
               init_dof sampling overflow because Go2 and Go1 share joint names but have different limits</i>.</li>
           </ul>
@@ -488,7 +477,7 @@ python scripts/train_depth_resnet.py
           <p>
             Deployment uses the ABS ROS pipeline, but changes the robot from <b>Go1 to Go2</b> and the forward camera from
             <b>ZED mini to RealSense D435i</b>, while adding <b>Livox MID360</b>
-            for side/rear 2D lidar and LIO localization. The nodes run on an onboard <b>Orin NX (16 GB)</b>
+            for side/rear 2D LiDAR observations and LIO localization. The nodes run on an onboard <b>Orin NX (16 GB)</b>
             and send joint commands through the Unitree Go2 low-level control interface.
           </p>
         </div>
@@ -517,7 +506,7 @@ python scripts/train_depth_resnet.py
               <code>publisher_depthimg_linvel_d435.py</code>,
               and extract nearest-obstacle distances along 11 evenly spaced rays from D435i depth images,
               publishing <code>/odom_linvel</code> as the policy’s estimated base linear velocity.</li>
-            <li><b>Side/rear 2D lidar</b>: add
+            <li><b>Side/rear 2D LiDAR</b>: add
               <code>livox_side_lidar_node</code> /
               <code>print_zed_front_lidar</code>; slice the MID360 3D point cloud at
               base height to obtain 2D distances and feed
@@ -547,8 +536,9 @@ python led_control_ros.py
 # 4) Main controller (agile/recovery switching and Go2 joint commands)
 python depth_obstacle_depth_goal_ros.py
 </code></pre>
-          <p>The main controller runs two policies: <b>agile</b> by default; when the RA value falls below the threshold,
-            <b>recovery</b> takes over to return the robot to the safe set, while the LED turns red to alert the operator.</p>
+          <p>In the full ABS controller design, the <b>Agile Policy</b> runs by default; when the RA value falls below the threshold,
+            the <b>Recovery Policy</b> takes over to return the robot to the safe set, while the LED turns red to alert the operator.
+            The real-world rollouts on this project page document the Agile Policy deployment path.</p>
         </div>
 
         <h3 class="title is-4">4. Controller Mapping</h3>
@@ -563,30 +553,29 @@ python depth_obstacle_depth_goal_ros.py
           </ul>
         </div>
 
-        <h3 class="title is-4">5. Real-World Evaluation <span style="color:#ff3860;">(pending)</span></h3>
+        <h3 class="title is-4">5. Real-World Evaluation Protocol</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>(pending) Report success rate, collision count, and maximum forward velocity over N trials.</li>
-            <li>(pending) Add 2–3 real-robot videos to <code>static/videos/</code>,
-              and display them in the <i>Results</i> carousel above.</li>
+            <li>For quantitative evaluation, record success rate, collision count, and maximum forward velocity over repeated trials under a fixed setup.</li>
+            <li>The homepage rollout gallery provides qualitative deployment evidence; aggregate performance claims should remain tied to logged evaluation trials.</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">6. Deployment Troubleshooting <span style="color:#ff3860;">(pending)</span></h3>
+        <h3 class="title is-4">6. Deployment Diagnostics</h3>
         <div class="content has-text-justified">
           <ul>
-            <li>(pending) Document each issue as symptom → diagnosis → resolution.
-              Examples: <i>D435i depth holes causing ray jumps (median filtering + reuse the previous valid value) /
+            <li>Organize deployment issues as symptom → diagnosis → resolution.
+              Representative cases include: <i>D435i depth holes causing ray jumps (median filtering + reuse the previous valid value) /
               LIO yaw drift during fast turns (increase IMU weighting / limit angular velocity) /
               pitching due to torque saturation (retrain with torque_speed_derate) / differences between Go2 SDK and Go1
               joint ordering</i>.</li>
           </ul>
         </div>
 
-        <h3 class="title is-4">7. Reproduction Conclusions <span style="color:#ff3860;">(pending)</span></h3>
+        <h3 class="title is-4">7. Scope of Reported Results</h3>
         <div class="content has-text-justified">
-          <p>(pending) Report the achieved simulation and real-world success rates and maximum speed,
-            compare them with the original paper, and explain gaps and possible causes. <b>Do not report numbers without measurements.</b></p>
+          <p>This technical record documents the implemented simulation and real-world deployment workflow.
+            Numerical success rates and speed comparisons should be reported only from matched, repeatable evaluation logs.</p>
         </div>
       </div>
     </div>
