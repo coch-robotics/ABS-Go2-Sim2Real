@@ -1,1 +1,1 @@
-把你的复现视频(mp4)放这个目录，命名如 result1.mp4 result2.mp4
+Place reproduction videos (MP4) in this directory, using names such as result1.mp4 and result2.mp4.
