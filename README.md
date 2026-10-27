@@ -1,6 +1,6 @@
 # ABS on Go2
 
-A quadruped robotics project page by Cong Chen, covering Go1-to-Go2 adaptation, simulation training, and deployment on a real robot.
+A quadruped robotics project page covering Go1-to-Go2 adaptation, simulation training, and deployment on a real robot.
 
 This page presents an independent reproduction and engineering application of Agile But Safe. It is not the official project page for the original paper or a complete training code repository.
 
